@@ -1,0 +1,61 @@
+{
+  "PAT-8812": [
+    {
+      "id": "ENC-9921",
+      "date": "Today, 09:40 AM",
+      "clinician": "Dr. Evelyn Reed",
+      "type": "Emergency Follow-up",
+      "diagnosis": "Acute Febrile Illness (Suspected Dengue / Malaria)",
+      "status": "conflict",
+      "statusLabel": "Conflict",
+      "facility": "Ganiyari Outpost Hub",
+      "notes": "Patient presented with 38.5°C fever, chills. Prescribed Paracetamol 650mg QDS + Azithromycin 500mg. Conflict detected with hospital server update (TID Paracetamol + Cetirizine 10mg).",
+      "medications": [
+        { "name": "Paracetamol 650mg", "dosage": "1 tablet QDS (every 6h)", "duration": "3 days" },
+        { "name": "Azithromycin 500mg", "dosage": "1 tablet OD", "duration": "5 days" }
+      ]
+    },
+    {
+      "id": "ENC-8840",
+      "date": "14 Aug 2026",
+      "clinician": "Dr. R. K. Patel",
+      "type": "General Outpatient",
+      "diagnosis": "Follow-up for Allergic Bronchitis",
+      "status": "synced",
+      "statusLabel": "Synced",
+      "facility": "Ganiyari Outpost Hub",
+      "notes": "Mild wheeze resolved. Advised to carry allergy alert card for Penicillin. Peak expiratory flow normal.",
+      "medications": [
+        { "name": "Salbutamol Inhaler 100mcg", "dosage": "2 puffs PRN", "duration": "As needed" },
+        { "name": "Cetirizine 10mg", "dosage": "1 tablet HS", "duration": "5 days" }
+      ]
+    },
+    {
+      "id": "ENC-7412",
+      "date": "02 Jun 2026",
+      "clinician": "Dr. Evelyn Reed",
+      "type": "Emergency Adverse Reaction",
+      "diagnosis": "Penicillin Anaphylaxis Emergency Presentation",
+      "status": "synced",
+      "statusLabel": "Adverse Event",
+      "facility": "District Sub-Center",
+      "notes": "Admitted with facial edema, stridor, and severe bronchospasm 20 mins after ingestion of oral Amoxicillin. Immediate IM Epinephrine 0.5mg administered alongside IV Hydrocortisone 200mg and nebulized Salbutamol. Patient stabilized over 6 hours. Lifelong Penicillin & cross-reactive beta-lactam allergy recorded permanently in offline database.",
+      "medications": [
+        { "name": "Epinephrine 1:1000", "dosage": "0.5mg IM stat", "duration": "Single dose" },
+        { "name": "Hydrocortisone", "dosage": "200mg IV stat", "duration": "Single dose" }
+      ]
+    },
+    {
+      "id": "ENC-6190",
+      "date": "19 Jan 2026",
+      "clinician": "Sister Anjali (Staff Nurse)",
+      "type": "Preventive Screening",
+      "diagnosis": "Annual Health Screening & Vitals Baseline",
+      "status": "synced",
+      "statusLabel": "Synced",
+      "facility": "Ganiyari Outpost Hub",
+      "notes": "Baseline vitals within normal parameters. BP 124/80, SpO2 99%, RBS 104 mg/dL. No active complaints.",
+      "medications": []
+    }
+  ]
+}

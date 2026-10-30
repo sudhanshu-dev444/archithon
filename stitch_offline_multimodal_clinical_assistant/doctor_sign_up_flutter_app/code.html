@@ -1,0 +1,311 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_blank" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "surface-container": "#e5eeff", "surface-variant": "#d3e4fe", "on-background": "#0b1c30", "on-primary": "#ffffff", "on-surface": "#0b1c30", "tertiary-fixed-dim": "#ffb4a8", "on-secondary-fixed": "#001f28", "tertiary-container": "#881a0f", "inverse-primary": "#9acee1", "secondary-fixed": "#bee9fa", "surface-container-lowest": "#ffffff", "surface-container-low": "#eff4ff", "error-container": "#ffdad6", "on-tertiary": "#ffffff", "surface-dim": "#cbdbf5", "on-tertiary-fixed": "#410100", "error": "#ba1a1a", "on-primary-fixed": "#001f28", "surface-bright": "#f8f9ff", "background": "#f8f9ff", "on-error": "#ffffff", "surface-container-high": "#dce9ff", "secondary": "#3a6472", "surface": "#f8f9ff", "on-tertiary-container": "#ff9786", "primary-fixed": "#b6ebfe", "secondary-fixed-dim": "#a2cddd", "on-secondary-fixed-variant": "#204c5a", "outline-variant": "#c0c8cb", "outline": "#70787c", "on-error-container": "#93000a", "tertiary": "#660200", "secondary-container": "#bbe7f7", "tertiary-fixed": "#ffdad4", "on-secondary": "#ffffff", "inverse-surface": "#213145", "on-primary-container": "#87bbce", "on-tertiary-fixed-variant": "#8a1c10", "on-secondary-container": "#3e6876", "primary": "#003441", "inverse-on-surface": "#eaf1ff", "primary-fixed-dim": "#9acee1", "primary-container": "#0f4c5c", "surface-tint": "#306576", "surface-container-highest": "#d3e4fe", "on-primary-fixed-variant": "#114d5d", "on-surface-variant": "#40484b" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "margin": "1rem", "space-md": "1rem", "space-xs": "0.25rem", "space-lg": "1.5rem", "space-sm": "0.5rem", "margin-tablet": "1.5rem", "space-xl": "2rem", "gutter-tablet": "1.25rem", "gutter": "1rem" }, "fontFamily": { "headline-lg-mobile": ["Inter"], "headline-lg": ["Inter"], "label-sm": ["Inter"], "body-md": ["Inter"], "label-lg": ["Inter"], "label-md": ["Inter"], "headline-sm": ["Inter"], "tabular-data": ["Inter"], "body-sm": ["Inter"], "body-lg": ["Inter"], "headline-md": ["Inter"] }, "fontSize": { "headline-lg-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "700" }], "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.06em", "fontWeight": "700" }], "body-md": ["15px", { "lineHeight": "22px", "fontWeight": "400" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "600" }], "headline-sm": ["18px", { "lineHeight": "26px", "fontWeight": "600" }], "tabular-data": ["15px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500" }], "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "headline-md": ["22px", { "lineHeight": "30px", "letterSpacing": "-0.01em", "fontWeight": "600" }] } } } };</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style></head><body class="bg-surface font-body-md text-body-md text-on-surface min-h-screen pt-safe pb-safe flex flex-col"><main class="flex flex-col relative w-full flex-1 bg-surface"><div class="flex flex-col w-full">
+<!-- Top Flutter App Bar -->
+<div class="sticky top-0 z-30 bg-surface/95 backdrop-blur-md px-margin py-3 flex items-center justify-between shadow-sm">
+<div class="flex items-center space-x-3">
+<button aria-label="Back to Doctor Login" class="h-12 w-12 rounded-xl flex items-center justify-center text-on-surface bg-surface-container active:scale-95 transition-transform" type="button">
+<span class="material-symbols-outlined text-headline-sm">arrow_back</span>
+</button>
+<div><div class="flex items-center space-x-2"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjYq9nEkdIslQtHwI6BhAT60guF6dwo4l4qfBBap9KlG89Q8ny10yP0_nKyuY1qtOLqmeBD4qdy3tZZ4-QkGWHlmikYxYzaGYROaUCmO0jzvlDhzHz1Ju6j0I7rMg7Gi-q_j8kB0r9WTWN-9PLyZUlUK9CJNWANYfx2STyZZoNXENXRg5besiJ8ZgEGxO-JNo0w_W6OOuHjV4dnFIRo3MqH-V-5_Bpa4UEVUo8Ao_PTtXDNkWGMuY" alt="Swasthya Sync Logo" class="h-6 w-6 rounded object-contain flex-shrink-0"><p class="font-headline-sm text-headline-sm text-on-surface tracking-tight leading-tight">Staff Registration</p></div><p class="font-label-sm text-label-sm text-secondary">Swasthya Sync • Clinical Mesh</p></div>
+</div>
+<div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface">
+<span class="material-symbols-outlined text-label-md text-primary" style="font-variation-settings: 'FILL' 1;">enhanced_encryption</span>
+<span class="font-label-sm text-label-sm tracking-wider font-semibold uppercase">ECDSA-384</span>
+</div>
+</div>
+<!-- Stepper Widget -->
+<div class="px-margin pt-3 pb-2">
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm flex flex-col space-y-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-2">
+<span class="px-2 py-0.5 rounded-lg bg-primary text-on-primary font-label-sm text-label-sm">Step 1 of 3</span>
+<span class="font-label-lg text-label-lg text-on-surface">Credentials &amp; Licensure</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary">33% Complete</span>
+</div>
+<!-- Progress Bar Track -->
+<div class="w-full bg-surface-container rounded-full h-2 overflow-hidden flex">
+<div class="bg-primary h-full w-1/3 rounded-full transition-all duration-300"></div>
+<div class="bg-transparent h-full w-2/3"></div>
+</div>
+<div class="flex items-center justify-between text-secondary">
+<span class="font-label-sm text-label-sm font-semibold text-primary">1. Credentials</span>
+<span class="font-label-sm text-label-sm opacity-50">2. Biometrics</span>
+<span class="font-label-sm text-label-sm opacity-50">3. Node Provisioning</span>
+</div>
+</div>
+</div>
+<!-- Scrollable Form Container -->
+<form class="px-margin pb-32 space-y-4 pt-1" id="staff-reg-form" onsubmit="event.preventDefault();">
+<!-- 1. Personal & Institutional Intake -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-3.5">
+<div class="flex items-center space-x-2 pb-1 text-primary">
+<span class="material-symbols-outlined text-headline-sm" style="font-variation-settings: 'FILL' 1;">badge</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Personal &amp; Institutional Intake</h2>
+</div>
+<!-- Legal Name with Locked Dr. prefix -->
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface block" for="doctor-legal-name">Full Legal Name (as per registry)</label>
+<div class="flex items-center h-[52px] bg-surface-container-low rounded-lg overflow-hidden focus-within:bg-surface-container-lowest focus-within:ring-2 focus-within:ring-primary-container">
+<div class="px-3.5 h-full flex items-center bg-surface-container text-on-surface-variant font-label-lg text-label-lg select-none">
+            Dr.
+          </div>
+<input class="w-full h-full px-3 bg-transparent text-on-surface font-body-md text-body-md placeholder:text-outline focus:outline-none" id="doctor-legal-name" placeholder="Aaditya V. Shenoy" required="" type="text">
+</div>
+</div>
+<!-- Official Institutional Email -->
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface block" for="doctor-inst-email">Official Institutional Email</label>
+<div class="flex items-center h-[52px] bg-surface-container-low rounded-lg px-3.5 space-x-2 focus-within:bg-surface-container-lowest focus-within:ring-2 focus-within:ring-primary-container">
+<span class="material-symbols-outlined text-secondary text-headline-sm">mail</span>
+<input class="w-full h-full bg-transparent text-on-surface font-body-md text-body-md placeholder:text-outline focus:outline-none" id="doctor-inst-email" placeholder="a.shenoy@ganiyari.health.org" required="" type="email">
+</div>
+<p class="font-label-sm text-label-sm text-secondary">FHIR auth token will be anchored to institutional domain.</p>
+</div>
+<!-- Field Operational Mobile -->
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface block" for="doctor-phone">Field Operational Mobile (Triage Pager)</label>
+<div class="flex items-center h-[52px] bg-surface-container-low rounded-lg px-3.5 space-x-2 focus-within:bg-surface-container-lowest focus-within:ring-2 focus-within:ring-primary-container">
+<span class="material-symbols-outlined text-secondary text-headline-sm">call</span>
+<span class="font-tabular-data text-tabular-data text-on-surface-variant">+91</span>
+<input class="w-full h-full bg-transparent text-on-surface font-tabular-data text-tabular-data placeholder:text-outline focus:outline-none" id="doctor-phone" placeholder="98421 77310" required="" type="tel">
+</div>
+</div>
+</div>
+<!-- 2. Medical Licensure (FHIR Verified) -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-3.5">
+<div class="flex items-center justify-between pb-1">
+<div class="flex items-center space-x-2 text-primary">
+<span class="material-symbols-outlined text-headline-sm" style="font-variation-settings: 'FILL' 1;">verified</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Medical Licensure</h2>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-semibold">FHIR R4 Verified</span>
+</div>
+<!-- Medical Reg ID -->
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface block" for="doctor-reg-id">Medical Registration ID (NMC / State Registry)</label>
+<div class="flex items-center h-[52px] bg-surface-container-low rounded-lg px-3.5 space-x-2 focus-within:bg-surface-container-lowest focus-within:ring-2 focus-within:ring-primary-container">
+<span class="material-symbols-outlined text-secondary text-headline-sm">clinical_notes</span>
+<input class="w-full h-full bg-transparent text-on-surface font-tabular-data text-tabular-data uppercase tracking-wider focus:outline-none font-semibold" id="doctor-reg-id" required="" type="text" value="MCI-2018-847291">
+<span class="material-symbols-outlined text-label-lg text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+<!-- Licensing Board Dropdown -->
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface block" for="doctor-licensing-board">Licensing Medical Council</label>
+<div class="relative flex items-center h-[52px] bg-surface-container-low rounded-lg px-3.5">
+<select class="w-full h-full bg-transparent text-on-surface font-body-md text-body-md appearance-none focus:outline-none pr-8" id="doctor-licensing-board">
+<option>National Medical Commission (NMC - Central)</option>
+<option>Maharashtra Medical Council (MMC)</option>
+<option>Chhattisgarh State Medical Council</option>
+<option>Karnataka Medical Council (KMC)</option>
+<option>Delhi Medical Council (DMC)</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 pointer-events-none text-secondary">expand_more</span>
+</div>
+</div>
+<!-- Primary Clinical Specialty -->
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface block" for="doctor-specialty">Primary Clinical Specialty</label>
+<div class="relative flex items-center h-[52px] bg-surface-container-low rounded-lg px-3.5">
+<select class="w-full h-full bg-transparent text-on-surface font-body-md text-body-md appearance-none focus:outline-none pr-8" id="doctor-specialty">
+<option>General Internal Medicine</option>
+<option>Pediatrics &amp; Neonatology</option>
+<option>Emergency &amp; Trauma Medicine</option>
+<option>Obstetrics &amp; Gynecology</option>
+<option>General Surgery</option>
+<option>Infectious Disease &amp; Epidemiology</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 pointer-events-none text-secondary">expand_more</span>
+</div>
+</div>
+<!-- Degree Chips -->
+<div class="space-y-2 pt-1">
+<label class="font-label-md text-label-md text-on-surface block">Accredited Degrees Held</label>
+<div class="grid grid-cols-4 gap-2">
+<!-- MBBS (checked) -->
+<label class="cursor-pointer">
+<input checked="" class="peer sr-only" type="checkbox">
+<div class="h-11 rounded-lg bg-surface-container-low text-on-surface flex items-center justify-center font-label-lg text-label-lg peer-checked:bg-primary-container peer-checked:text-on-primary transition-colors">
+              MBBS
+            </div>
+</label>
+<!-- MD (checked) -->
+<label class="cursor-pointer">
+<input checked="" class="peer sr-only" type="checkbox">
+<div class="h-11 rounded-lg bg-surface-container-low text-on-surface flex items-center justify-center font-label-lg text-label-lg peer-checked:bg-primary-container peer-checked:text-on-primary transition-colors">
+              MD
+            </div>
+</label>
+<!-- MS -->
+<label class="cursor-pointer">
+<input class="peer sr-only" type="checkbox">
+<div class="h-11 rounded-lg bg-surface-container-low text-on-surface flex items-center justify-center font-label-lg text-label-lg peer-checked:bg-primary-container peer-checked:text-on-primary transition-colors">
+              MS
+            </div>
+</label>
+<!-- DNB -->
+<label class="cursor-pointer">
+<input class="peer sr-only" type="checkbox">
+<div class="h-11 rounded-lg bg-surface-container-low text-on-surface flex items-center justify-center font-label-lg text-label-lg peer-checked:bg-primary-container peer-checked:text-on-primary transition-colors">
+              DNB
+            </div>
+</label>
+</div>
+</div>
+</div>
+<!-- 3. Station Deployment -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-3.5">
+<div class="flex items-center space-x-2 pb-1 text-primary">
+<span class="material-symbols-outlined text-headline-sm" style="font-variation-settings: 'FILL' 1;">local_hospital</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Station Deployment</h2>
+</div>
+<!-- Assigned Facility -->
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface block" for="doctor-facility">Assigned Health Facility / Outpost</label>
+<div class="flex items-center h-[52px] bg-surface-container-low rounded-lg px-3.5 space-x-2 focus-within:bg-surface-container-lowest focus-within:ring-2 focus-within:ring-primary-container">
+<span class="material-symbols-outlined text-secondary text-headline-sm">share_location</span>
+<input class="w-full h-full bg-transparent text-on-surface font-body-md text-body-md focus:outline-none" id="doctor-facility" required="" type="text" value="Ganiyari Health Outpost, Sector 4">
+</div>
+</div>
+<!-- Station Role -->
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface block" for="doctor-role">Clinical Station Role</label>
+<div class="flex items-center h-[52px] bg-surface-container rounded-lg px-3.5 space-x-2">
+<span class="material-symbols-outlined text-secondary text-headline-sm">medical_services</span>
+<input class="w-full h-full bg-transparent text-on-surface font-body-md text-body-md font-semibold cursor-not-allowed focus:outline-none" id="doctor-role" readonly="" type="text" value="Attending Field Physician">
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm uppercase">Locked</span>
+</div>
+</div>
+</div>
+<!-- 4. Offline Station Security -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm space-y-3.5">
+<div class="flex items-center justify-between pb-1">
+<div class="flex items-center space-x-2 text-primary">
+<span class="material-symbols-outlined text-headline-sm" style="font-variation-settings: 'FILL' 1;">security</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Offline Station Security</h2>
+</div>
+<div class="flex items-center space-x-1 text-secondary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-label-md">wifi_off</span>
+<span class="">Zero-Cell Ready</span>
+</div>
+</div>
+<!-- Password -->
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface block" for="doctor-pass">Station Passphrase</label>
+<div class="flex items-center h-[52px] bg-surface-container-low rounded-lg px-3.5 space-x-2 focus-within:bg-surface-container-lowest focus-within:ring-2 focus-within:ring-primary-container">
+<span class="material-symbols-outlined text-secondary text-headline-sm">lock</span>
+<input class="w-full h-full bg-transparent text-on-surface font-body-md text-body-md focus:outline-none" id="doctor-pass" placeholder="At least 8 characters" required="" type="password">
+<button class="text-secondary p-1" onclick="togglePassVisibility('doctor-pass', this)" type="button">
+<span class="material-symbols-outlined text-headline-sm">visibility</span>
+</button>
+</div>
+</div>
+<!-- Confirm Password -->
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface block" for="doctor-pass-conf">Confirm Station Passphrase</label>
+<div class="flex items-center h-[52px] bg-surface-container-low rounded-lg px-3.5 space-x-2 focus-within:bg-surface-container-lowest focus-within:ring-2 focus-within:ring-primary-container">
+<span class="material-symbols-outlined text-secondary text-headline-sm">lock_reset</span>
+<input class="w-full h-full bg-transparent text-on-surface font-body-md text-body-md focus:outline-none" id="doctor-pass-conf" placeholder="Re-enter passphrase" required="" type="password">
+</div>
+</div>
+<!-- Password Strength Meter -->
+<div class="space-y-1.5 pt-1">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-secondary">Local Cryptographic Strength</span>
+<span class="font-label-sm text-label-sm text-primary font-semibold">High (384-bit Entropic)</span>
+</div>
+<div class="grid grid-cols-4 gap-1.5 h-1.5">
+<div class="bg-primary rounded-full"></div>
+<div class="bg-primary rounded-full"></div>
+<div class="bg-primary rounded-full"></div>
+<div class="bg-primary/40 rounded-full"></div>
+</div>
+</div>
+<!-- 6-Digit Offline Emergency PIN -->
+<div class="space-y-1.5 pt-2">
+<div class="flex items-center justify-between">
+<label class="font-label-md text-label-md text-on-surface block" for="pin-1">6-Digit Offline Emergency PIN</label>
+<span class="font-label-sm text-label-sm text-secondary">For rapid bedside unlock</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Allows clinical record authorization during zero-network field missions without typing full passphrase.</p>
+<div class="flex items-center justify-between space-x-2 pt-1">
+<input class="w-11 h-12 text-center bg-surface-container font-tabular-data text-headline-sm rounded-lg focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container focus:outline-none" id="pin-1" inputmode="numeric" maxlength="1" pattern="[0-9]" required="" type="password">
+<input class="w-11 h-12 text-center bg-surface-container font-tabular-data text-headline-sm rounded-lg focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container focus:outline-none" id="pin-2" inputmode="numeric" maxlength="1" pattern="[0-9]" required="" type="password">
+<input class="w-11 h-12 text-center bg-surface-container font-tabular-data text-headline-sm rounded-lg focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container focus:outline-none" id="pin-3" inputmode="numeric" maxlength="1" pattern="[0-9]" required="" type="password">
+<input class="w-11 h-12 text-center bg-surface-container font-tabular-data text-headline-sm rounded-lg focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container focus:outline-none" id="pin-4" inputmode="numeric" maxlength="1" pattern="[0-9]" required="" type="password">
+<input class="w-11 h-12 text-center bg-surface-container font-tabular-data text-headline-sm rounded-lg focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container focus:outline-none" id="pin-5" inputmode="numeric" maxlength="1" pattern="[0-9]" required="" type="password">
+<input class="w-11 h-12 text-center bg-surface-container font-tabular-data text-headline-sm rounded-lg focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container focus:outline-none" id="pin-6" inputmode="numeric" maxlength="1" pattern="[0-9]" required="" type="password">
+</div>
+</div>
+</div>
+<!-- Attestation Checkbox -->
+<div class="bg-surface-container-low rounded-xl p-4 flex items-start space-x-3.5">
+<input class="mt-0.5 h-6 w-6 rounded accent-primary-container cursor-pointer flex-shrink-0" id="attest-checkbox" required="" type="checkbox">
+<label class="font-body-sm text-body-sm text-on-surface cursor-pointer select-none leading-relaxed" for="attest-checkbox">
+        I certify under medical licensure regulations that all provided credentials are genuine and accept cryptographic attestation responsibility for all triage encounters authored on this station node.
+      </label>
+</div>
+<!-- Extra space so sticky bar doesn't cover last elements -->
+<div class="h-6"></div>
+</form>
+<!-- Sticky Bottom Flutter Action Bar -->
+<div class="fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-md px-margin py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] flex flex-col space-y-2">
+<!-- Elevated Primary CTA -->
+<button class="w-full h-[52px] bg-primary-container text-on-primary rounded-xl font-label-lg text-label-lg flex items-center justify-center space-x-2 active:bg-primary shadow-md active:scale-[0.99] transition-all" onclick="handleSubmit()" type="button">
+<span class="material-symbols-outlined text-headline-sm">fact_check</span>
+<span class="">Submit Registration for Verification</span>
+</button>
+<!-- Secondary Back Action -->
+<button class="w-full h-10 text-primary font-label-md text-label-md flex items-center justify-center active:opacity-70 transition-opacity" type="button">
+      Already registered? Return to Doctor Login
+    </button>
+</div>
+</div>
+<script>
+  function togglePassVisibility(id, btn) {
+    const input = document.getElementById(id);
+    if (!input) return;
+    const isPass = input.type === 'password';
+    input.type = isPass ? 'text' : 'password';
+    const icon = btn.querySelector('.material-symbols-outlined');
+    if (icon) icon.textContent = isPass ? 'visibility_off' : 'visibility';
+  }
+
+  // Automatic pin advance
+  const pinInputs = [1,2,3,4,5,6].map(i => document.getElementById(`pin-${i}`));
+  pinInputs.forEach((el, idx) => {
+    if (!el) return;
+    el.addEventListener('input', (e) => {
+      if (e.target.value.length === 1 && idx < pinInputs.length - 1) {
+        pinInputs[idx + 1].focus();
+      }
+    });
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !e.target.value && idx > 0) {
+        pinInputs[idx - 1].focus();
+      }
+    });
+  });
+
+  function handleSubmit() {
+    const attest = document.getElementById('attest-checkbox');
+    if (attest && !attest.checked) {
+      attest.focus();
+      attest.parentElement.classList.add('bg-error-container');
+      setTimeout(() => {
+        attest.parentElement.classList.remove('bg-error-container');
+      }, 1500);
+      return;
+    }
+    const btn = document.querySelector('button[onclick="handleSubmit()"]');
+    if (btn) {
+      btn.innerHTML = `<span class="material-symbols-outlined animate-spin text-headline-sm">progress_activity</span><span>Validating FHIR Credential Mesh...</span>`;
+      setTimeout(() => {
+        btn.innerHTML = `<span class="material-symbols-outlined text-headline-sm">task_alt</span><span>Node Certificate Issued</span>`;
+      }, 1200);
+    }
+  }
+</script></main>
+
+</body></html>

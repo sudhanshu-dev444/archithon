@@ -1,0 +1,51 @@
+{
+  "formulary": [
+    {
+      "id": "DRUG-001",
+      "name": "Paracetamol",
+      "strength": "650mg",
+      "class": "Analgesic / Antipyretic",
+      "stock": 420,
+      "contraindications": ["Severe hepatic impairment"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "DRUG-002",
+      "name": "Amoxicillin",
+      "strength": "500mg",
+      "class": "Beta-lactam Antibiotic (Penicillin group)",
+      "stock": 180,
+      "contraindications": ["Penicillin allergy", "History of beta-lactam anaphylaxis"],
+      "safeForPenicillinAllergy": false,
+      "allergyWarning": "CRITICAL: Patient has documented severe penicillin anaphylaxis. High risk of fatal bronchospasm or circulatory collapse."
+    },
+    {
+      "id": "DRUG-003",
+      "name": "Azithromycin",
+      "strength": "500mg",
+      "class": "Macrolide Antibiotic",
+      "stock": 140,
+      "contraindications": ["Known macrolide allergy"],
+      "safeForPenicillinAllergy": true,
+      "alternativeFor": "Amoxicillin"
+    },
+    {
+      "id": "DRUG-004",
+      "name": "Oral Rehydration Salts (ORS)",
+      "strength": "20.5g sachet",
+      "class": "Electrolyte Solution",
+      "stock": 650,
+      "contraindications": [],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "DRUG-005",
+      "name": "Cetirizine",
+      "strength": "10mg",
+      "class": "Antihistamine (H1 Blocker)",
+      "stock": 310,
+      "contraindications": ["Severe renal failure"],
+      "safeForPenicillinAllergy": true
+    }
+  ]
+}

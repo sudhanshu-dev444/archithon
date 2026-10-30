@@ -1,153 +1,68 @@
-# OfflineScribe
+# Swasthya Sync — Offline-First Multimodal AI Healthcare Assistant (PS04)
 
-An offline-first, multimodal AI assistant that helps healthcare workers in low-connectivity areas capture voice notes and scan medical documents, turn them into structured case files on the device, search patient history locally, and sync safely to a central database when the network returns.
+Production-grade React web application built from Google Stitch designs for rural clinical field outposts (Ganiyari Health Outpost).
 
-> **Status:** design and planning stage (PS04, HealthTech / Generative AI / Edge AI). The commands and repository layout below are a proposed scaffold, not a released build. See [PRD.md](./PRD.md) for full requirements.
+Designed for zero-connectivity environments with local SQLite persistence, on-device ambient dictation, edge OCR prescription processing, and conflict-aware differential synchronization.
 
-> **Safety:** OfflineScribe is a documentation aid. It does not diagnose or recommend treatment. All AI output is a draft until a clinician reviews and approves it.
+---
 
-## Why
+## 🚀 Live Demo & Quick Start
 
-Rural clinics often have unreliable internet, and patient information lives in handwritten notes, paper reports and spoken consultations. Typing it all into records is slow and error-prone. OfflineScribe moves that work onto the phone, works with no signal, and treats data integrity as the first requirement.
+### Prerequisites
+- Node.js 18+ & npm
 
-## Features
-
-- **Voice capture** with local speech-to-text (whisper.cpp), voice-activity detection and hallucination filtering.
-- **Document scanning** with local OCR, printed vs handwritten routing and drug-name correction.
-- **Structured case files:** a quantized on-device LLM converts text into a fixed JSON schema, with every field linked to its source snippet. Missing information stays empty, never guessed.
-- **Clinician review:** side-by-side source and fields, low-confidence highlighting, mandatory confirmation of drug, dose and unit.
-- **Local search and RAG:** SQLite full-text plus vector search, always scoped to one patient, with cited history summaries.
-- **Reliable sync:** operation log, idempotency keys, version tracking, explicit conflict detection and a human-in-the-loop resolution screen.
-- **Privacy:** encrypted storage on the device, TLS in transit, audit log of every action.
-
-## Architecture
-
-```
-Phone (works offline)                               Server (when online)
--------------------------------------------         ------------------------
-Voice note / Document scan / Typed entry
-      |
-Whisper.cpp + VAD        OCR + drug-name check
-      \                   /
-       On-device LLM -> draft case file (JSON + sources)
-                 |
-        Clinician review and approval
-                 |
- Encrypted SQLite (records, FTS, vectors) -> Operation log ==sync==> Sync API (FastAPI)
-        ^                                                          -> Dedupe table
-        |__ history retrieval (RAG)                                -> Version check / conflicts
-                                                                   -> PostgreSQL + audit log
-```
-
-## Tech stack (proposed)
-
-| Layer | Technology |
-| --- | --- |
-| Client | Native or cross-platform Android app with SQLite; PWA for review and light capture |
-| Speech | whisper.cpp with a quantized small model, fine-tuned Hindi model for Hindi |
-| OCR | PaddleOCR / PP-OCRv5 for print; handwriting engines benchmarked on own samples |
-| LLM | 2 to 4B int4 model via llama.cpp or LiteRT-LM |
-| Retrieval | SQLite FTS + sqlite-vec, multilingual embedding model |
-| Backend | FastAPI (Node.js alternative) |
-| Database | PostgreSQL |
-| Security | AES-GCM field encryption, TLS, hash-chained audit log |
-
-## How sync works
-
-1. Every edit is saved as an immutable **operation** with a unique `op_id`, device ID, patient ID, field path, base version and new value.
-2. The client sends pending operations when online, using `op_id` as an idempotency key on every retry.
-3. The server stores each `op_id` permanently. A repeated ID returns the stored result; the same ID with a different payload is rejected.
-4. The server compares the operation's base version with the record's current version.
-   - Same version: apply.
-   - Different fields changed: merge and log.
-   - Same field, or delete versus edit: save a **conflict record** and apply neither side.
-5. A clinician resolves each conflict on a side-by-side screen. The decision is logged as an operation.
-6. After sync, device and server compare per-patient checksums and the audit chain.
-
-Transient network errors are retried with backoff. Validation and permission errors are shown to the user instead of retried.
-
-## Proposed repository layout
-
-```
-offlinescribe/
-├── app/                 # client (phone) application
-│   ├── capture/         # audio and camera capture
-│   ├── ai/              # speech, OCR, LLM, extraction, verification
-│   ├── store/           # encrypted SQLite, FTS, vector index, operation log
-│   ├── review/          # case-file review and conflict resolution UI
-│   └── sync/            # sync client, retry and backoff
-├── server/
-│   ├── api/             # FastAPI sync endpoints, auth
-│   ├── sync/            # dedupe table, version check, conflict records
-│   └── db/              # PostgreSQL migrations
-├── eval/                # test sets, fault-injection harness, metrics scripts
-├── docs/                # PRD, design notes, research
-├── PRD.md
-└── README.md
-```
-
-## Getting started
-
-These steps describe the intended developer flow once the scaffold exists. Replace placeholders as the project takes shape.
+### Running Locally
 
 ```bash
-# 1. Clone
-git clone <your-repo-url> offlinescribe && cd offlinescribe
+# Navigate to the application directory
+cd Swasthya_sync/swasthya-sync-app
 
-# 2. Server (Python)
-cd server
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-# set DATABASE_URL and a secret for tokens, then:
-uvicorn api.main:app --reload
+# Install dependencies (already installed if cloning checkout)
+npm install
 
-# 3. Client
-# Follow app/README.md for the chosen framework (Android Studio, Flutter or React Native).
-# Models are downloaded once and stored on the device:
-#   - a quantized whisper.cpp model
-#   - an OCR model
-#   - an int4 LLM and an embedding model
+# Start Vite development server
+npm run dev
 ```
 
-## Testing
+Open `http://localhost:5173` in your browser.
 
-The sync engine is tested harder than anything else. Planned suites in `eval/`:
+---
 
-- **Fault injection:** drop the response after the server commits, duplicate and reorder deliveries, kill the app mid-sync. Expected result: zero duplicates, zero lost operations.
-- **Conflict scenarios:** same field on two devices, different fields, delete versus edit, three devices. Expected result: zero silent overwrites.
-- **Integrity:** checksum match after every sync, tamper detection on the audit chain.
-- **AI quality:** field-level precision and recall on scripted visits; WER for speech (clean and noisy, Hindi and English); CER for OCR; hallucinated phrases per hour.
-- **Device performance:** an 8-hour simulated clinic day on a low-end Android phone, tracking RAM, battery and temperature.
+## 📱 Screen Inventory & Routes
 
-Use synthetic or de-identified data only. Never commit real patient data.
+| # | Screen Name | Route | Key Capabilities |
+|---|---|---|---|
+| **S1** | **Doctor Login & Quick PIN** | `/login` | Doctor ID/Passphrase login, 6-digit Quick PIN numpad with auto-advance, Code Blue Emergency Triage Bypass |
+| **S2** | **Staff Registration** | `/register` | 3-step medical officer registration, council & specialty pickers, biometric keycard binding |
+| **S3** | **Offline Patient Directory & RAG** | `/patients` | Instant offline search across 248 records, Triage Queue (Critical/Urgent/Routine), Active Allergy Guard banner |
+| **S4** | **Patient Medical Record & Timeline** | `/patients/:id` | 2x2 vitals grid with baseline comparison, consultation history timeline, documented adverse drug event callout |
+| **S5** | **Multimodal Clinical Intake** | `/patients/:id/intake` | 16-bar real-time audio waveform animation, Hindi/English live translation stream, Edge OCR slip scanner, Drug conflict guard |
+| **S6** | **Clinical Case Review & Sign-off** | `/patients/:id/review` | AI provenance badges ("Suggested from dictation"), ICD-10 coders, Critical Allergy Conflict reject/adopt card, Doctor verification checkbox |
+| **S7** | **Differential Sync & Conflict Inspector** | `/sync` | Two-way partition collision inspector, side-by-side diff (This Clinic vs District Hospital), 3-way merge resolution, Outbox queue |
 
-## Privacy and compliance
+---
 
-- Data is encrypted on the device and in transit. The README and PRD state which fields the server can read.
-- The data model is shaped for HL7 FHIR R4 so a future export to India's ABDM is possible. v1 does not integrate with ABDM.
-- India's DPDP Act 2023 applies; confirm current rules for health data on official sources before any deployment.
+## 🛠️ Architecture & Tech Stack
 
-## Known limitations
+- **Framework**: React 18 + Vite
+- **Routing**: React Router v6
+- **Styling**: Tailwind CSS v3 with exact tokens from `DESIGN.md`
+  - Primary: `#003441` (Deep Forest Teal)
+  - Secondary: `#3a6472`
+  - Tertiary / Emergency: `#660200` / `#ba1a1a`
+  - Surface: `#f8f9ff`
+- **Typography**: Inter (Google Fonts) with tabular numbers for vitals
+- **Icons**: Google Material Symbols Outlined
+- **State Management**: React Context + useReducer
+  - `AuthContext`: Clinician identity, PIN session, Emergency Bypass auditing
+  - `PatientContext`: Local cache of 248 patient records with instant offline querying
+  - `SyncContext`: Offline outbox, pending queues, differential collision counts
+- **Mock Data**: Rich JSON stores in `src/data/` for patients, encounters, and formulary contraindications
 
-- Handwritten prescription OCR is far from reliable; treat output as draft.
-- Speech models can invent text, especially in noise or silence; the audio is kept until approval so errors stay catchable.
-- Indic language accuracy depends on fine-tuned models and is weaker on spontaneous speech.
-- Phones heat up under sustained LLM use; model size is chosen accordingly.
+---
 
-## Roadmap
+## 🛡️ Critical Clinical Safety Rules
 
-1. Sync core and fault-injection harness
-2. Encrypted local store, review UI, audit log
-3. Voice path
-4. Document path
-5. Retrieval and history summaries
-6. Conflict resolution UI and demo
-7. Evaluation report
-
-## Contributing
-
-Open an issue before large changes. Keep patient-like data out of the repository and out of issue text.
-
-## License
-
-To be decided.
+1. **Deterministic Allergy Checking**: The drug-allergy conflict engine evaluates against local patient history (e.g. Sunita Devi PAT-8812's severe Penicillin anaphylaxis). It warns immediately when Amoxicillin or beta-lactams are detected from OCR or dictation, suggesting safe formulary alternatives (Azithromycin 500mg).
+2. **Explicit Clinician Sign-off**: No AI draft can be automatically committed into the clinical record without the clinician checking the Doctor Verification box and clicking "Save & Approve Record".
+3. **Traceability**: All synthesized sections display provenance tags indicating their origin (e.g., `Suggested from dictation`, `Confidence: 96%`).
