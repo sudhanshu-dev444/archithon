@@ -1,29 +1,15 @@
 {
-  "name": "swasthya-sync-app",
-  "private": true,
-  "version": "0.0.0",
+  "name": "swasthya-sync-backend",
+  "version": "1.0.0",
+  "description": "Offline-First Multimodal Clinical Documentation Assistant - Sync Engine Backend",
+  "main": "server.js",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "oxlint",
-    "preview": "vite preview",
-    "server": "node --experimental-sqlite backend/server.js",
-    "server:dev": "node --experimental-sqlite --watch backend/server.js"
+    "start": "node --experimental-sqlite server.js",
+    "dev": "node --experimental-sqlite --watch server.js"
   },
   "dependencies": {
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "react-router-dom": "^7.18.5"
-  },
-  "devDependencies": {
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.2",
-    "autoprefixer": "^10.6.2",
-    "oxlint": "^1.89.0",
-    "postcss": "^8.5.32",
-    "tailwindcss": "^3.4.19",
-    "vite": "^8.3.5"
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
   }
 }
