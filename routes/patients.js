@@ -46,7 +46,11 @@ router.get('/', requireAuth, (req, res) => {
 // ── POST /patients ─────────────────────────────────────────────
 // Create a new patient.
 router.post('/', requireAuth, (req, res) => {
-  const { patient_id, abha, name, age, sex, village, ward, phone, condition, triage = 'routine', summary } = req.body;
+  const {
+    patient_id, abha, name, age, sex, village, ward, phone, condition,
+    triage = 'routine', summary, date_of_birth, address,
+    emergency_contact_name, emergency_contact_phone, photo_url
+  } = req.body;
   if (!name) return res.status(400).json({ error: 'name is required' });
 
   const db = getDb();
@@ -60,9 +64,18 @@ router.post('/', requireAuth, (req, res) => {
   }
 
   db.prepare(`
-    INSERT INTO patients (patient_id, abha, name, age, sex, village, ward, phone, condition, triage, summary, version, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
-  `).run(pid, abha || null, name, age || null, sex || null, village || null, ward || null, phone || null, condition || null, triage, summary || null, now, now);
+    INSERT INTO patients (
+      patient_id, abha, name, age, sex, village, ward, phone, condition,
+      triage, summary, date_of_birth, address, emergency_contact_name,
+      emergency_contact_phone, photo_url, version, created_at, updated_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+  `).run(
+    pid, abha || null, name, age || null, sex || null, village || null, ward || null,
+    phone || null, condition || null, triage, summary || null,
+    date_of_birth || null, address || null, emergency_contact_name || null,
+    emergency_contact_phone || null, photo_url || null, now, now
+  );
 
   appendAudit({ doctor_id: req.doctor_id, device_id: req.device_id, action: 'create', entity_type: 'patient', entity_id: pid, patient_id: pid });
   res.status(201).json({ patient_id: pid });
@@ -76,20 +89,45 @@ router.get('/:id', requireAuth, (req, res) => {
 
   const allergies = db.prepare('SELECT * FROM allergies WHERE patient_id = ?').all(req.params.id);
   const encounters = db.prepare('SELECT * FROM encounters WHERE patient_id = ? ORDER BY encounter_ts DESC').all(req.params.id);
+  const audio_recordings = db.prepare('SELECT * FROM audio_recordings WHERE patient_id = ? ORDER BY created_at DESC').all(req.params.id);
 
   appendAudit({ doctor_id: req.doctor_id, device_id: req.device_id, action: 'view', entity_type: 'patient', entity_id: req.params.id, patient_id: req.params.id });
-  res.json({ ...patient, allergies, encounters });
+  res.json({ ...patient, allergies, encounters, audio_recordings });
 });
 
 // ── PATCH /patients/:id ────────────────────────────────────────
 router.patch('/:id', requireAuth, (req, res) => {
   const db = getDb();
-  const patient = db.prepare('SELECT * FROM patients WHERE patient_id = ?').get(req.params.id);
-  if (!patient) return res.status(404).json({ error: 'Patient not found' });
+  let patient = db.prepare('SELECT * FROM patients WHERE patient_id = ?').get(req.params.id);
 
-  const { name, age, sex, village, ward, phone, condition, triage, summary } = req.body;
-  const newVersion = patient.version + 1;
+  const {
+    name, age, sex, village, ward, phone, condition, triage, summary,
+    date_of_birth, address, emergency_contact_name, emergency_contact_phone, photo_url
+  } = req.body;
   const now = Date.now();
+
+  if (!patient) {
+    // Seamless Upsert for offline or client-generated patient records
+    const pid = req.params.id;
+    db.prepare(`
+      INSERT INTO patients (
+        patient_id, name, age, sex, village, ward, phone, condition,
+        triage, summary, date_of_birth, address, emergency_contact_name,
+        emergency_contact_phone, photo_url, version, created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+    `).run(
+      pid, name || 'Patient ' + pid, age || null, sex || null, village || 'Ganiyari Outpost Hub',
+      ward || null, phone || null, condition || null, triage || 'routine',
+      summary || null, date_of_birth || null, address || null,
+      emergency_contact_name || null, emergency_contact_phone || null,
+      photo_url || null, now, now
+    );
+    appendAudit({ doctor_id: req.doctor_id, device_id: req.device_id, action: 'create', entity_type: 'patient', entity_id: pid, patient_id: pid });
+    return res.json({ success: true, version: 1 });
+  }
+
+  const newVersion = (patient.version || 0) + 1;
 
   db.prepare(`
     UPDATE patients SET
@@ -102,13 +140,67 @@ router.patch('/:id', requireAuth, (req, res) => {
       condition = COALESCE(?, condition),
       triage = COALESCE(?, triage),
       summary = COALESCE(?, summary),
+      date_of_birth = COALESCE(?, date_of_birth),
+      address = COALESCE(?, address),
+      emergency_contact_name = COALESCE(?, emergency_contact_name),
+      emergency_contact_phone = COALESCE(?, emergency_contact_phone),
+      photo_url = COALESCE(?, photo_url),
       version = ?,
       updated_at = ?
     WHERE patient_id = ?
-  `).run(name ?? null, age ?? null, sex ?? null, village ?? null, ward ?? null, phone ?? null, condition ?? null, triage ?? null, summary ?? null, newVersion, now, req.params.id);
+  `).run(
+    name ?? null, age ?? null, sex ?? null, village ?? null, ward ?? null, phone ?? null,
+    condition ?? null, triage ?? null, summary ?? null,
+    date_of_birth ?? null, address ?? null, emergency_contact_name ?? null,
+    emergency_contact_phone ?? null, photo_url ?? null,
+    newVersion, now, req.params.id
+  );
 
   appendAudit({ doctor_id: req.doctor_id, device_id: req.device_id, action: 'edit', entity_type: 'patient', entity_id: req.params.id, patient_id: req.params.id });
   res.json({ success: true, version: newVersion });
+});
+
+// ── POST /patients/:id/audio ───────────────────────────────────
+// Save audio recording metadata linked to patient and encounter.
+router.post('/:id/audio', requireAuth, (req, res) => {
+  const {
+    recording_id, encounter_id, duration_seconds = 0, language = 'hi',
+    recorded_by, recorded_by_role = 'Doctor', transcript, file_name
+  } = req.body;
+
+  const db = getDb();
+  const rid = recording_id || `REC-${Date.now()}`;
+  const now = Date.now();
+
+  db.prepare(`
+    INSERT INTO audio_recordings (
+      recording_id, patient_id, encounter_id, duration_seconds, language,
+      recorded_by, recorded_by_role, transcript, file_name, created_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    rid, req.params.id, encounter_id || null, duration_seconds, language,
+    recorded_by || req.doctor_id || 'DOC-001', recorded_by_role,
+    transcript || null, file_name || null, now
+  );
+
+  appendAudit({
+    doctor_id: req.doctor_id,
+    device_id: req.device_id,
+    action: 'save_audio',
+    entity_type: 'audio_recording',
+    entity_id: rid,
+    patient_id: req.params.id
+  });
+
+  res.status(201).json({ recording_id: rid, patient_id: req.params.id, success: true });
+});
+
+// ── GET /patients/:id/audio ────────────────────────────────────
+router.get('/:id/audio', requireAuth, (req, res) => {
+  const db = getDb();
+  const recordings = db.prepare('SELECT * FROM audio_recordings WHERE patient_id = ? ORDER BY created_at DESC').all(req.params.id);
+  res.json({ recordings });
 });
 
 // ── GET /patients/:id/allergies ────────────────────────────────
@@ -148,18 +240,32 @@ router.get('/:id/encounters', requireAuth, (req, res) => {
 
 // ── POST /patients/:id/encounters ─────────────────────────────
 router.post('/:id/encounters', requireAuth, (req, res) => {
-  const { complaint, history, diagnosis, icd10_code, vitals } = req.body;
+  const { complaint, history, diagnosis, icd10_code, vitals, encounter_id: clientEncId, status = 'approved', recorded_by } = req.body;
   const db = getDb();
-  const encounter_id = `ENC-${Date.now()}`;
+  const encounter_id = clientEncId || req.body.id || `ENC-${Date.now()}`;
   const now = Date.now();
+  const doctor_id = recorded_by || req.doctor_id || 'DOC-001';
+  const approvedAt = status === 'approved' ? now : null;
+  const approvedBy = status === 'approved' ? doctor_id : null;
 
   db.prepare(`
     INSERT INTO encounters
-      (encounter_id, patient_id, doctor_id, device_id, encounter_ts, complaint, history, diagnosis, icd10_code, vitals, status, version, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', 0, ?, ?)
-  `).run(encounter_id, req.params.id, req.doctor_id, req.device_id, now,
+      (encounter_id, patient_id, doctor_id, device_id, encounter_ts, complaint, history, diagnosis, icd10_code, vitals, status, approved_by, approved_at, version, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+    ON CONFLICT(encounter_id) DO UPDATE SET
+      complaint = excluded.complaint,
+      history = excluded.history,
+      diagnosis = excluded.diagnosis,
+      icd10_code = excluded.icd10_code,
+      vitals = excluded.vitals,
+      status = excluded.status,
+      approved_by = excluded.approved_by,
+      approved_at = excluded.approved_at,
+      updated_at = excluded.updated_at
+  `).run(encounter_id, req.params.id, doctor_id, req.device_id, now,
          complaint || null, history || null, diagnosis || null, icd10_code || null,
-         vitals ? JSON.stringify(vitals) : null, now, now);
+         vitals ? (typeof vitals === 'object' ? JSON.stringify(vitals) : vitals) : null,
+         status, approvedBy, approvedAt, now, now);
 
   appendAudit({ doctor_id: req.doctor_id, device_id: req.device_id, action: 'create', entity_type: 'encounter', entity_id: encounter_id, patient_id: req.params.id });
   res.status(201).json({ encounter_id });
@@ -219,18 +325,26 @@ router.patch('/:id/encounters/:enc_id', requireAuth, (req, res) => {
 
 // ── POST /patients/:id/encounters/:enc_id/prescriptions ────────
 router.post('/:id/encounters/:enc_id/prescriptions', requireAuth, (req, res) => {
-  const { drug_name, dosage, frequency, duration, route, source_snippet, confidence } = req.body;
+  const { prescription_id: clientRxId, drug_name, dosage, frequency, duration, route, source_snippet, confidence, status = 'active' } = req.body;
   if (!drug_name) return res.status(400).json({ error: 'drug_name is required' });
 
   const db = getDb();
-  const prescription_id = `RX-${Date.now()}`;
+  const prescription_id = clientRxId || `RX-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
   db.prepare(`
     INSERT INTO prescriptions
       (prescription_id, encounter_id, patient_id, drug_name, dosage, frequency, duration, route, confirmed, source_snippet, confidence, status, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 'active', ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
+    ON CONFLICT(prescription_id) DO UPDATE SET
+      drug_name = excluded.drug_name,
+      dosage = excluded.dosage,
+      frequency = excluded.frequency,
+      duration = excluded.duration,
+      route = excluded.route,
+      confirmed = 1,
+      status = excluded.status
   `).run(prescription_id, req.params.enc_id, req.params.id, drug_name,
          dosage || null, frequency || null, duration || null, route || null,
-         source_snippet || null, confidence || null, Date.now());
+         source_snippet || null, confidence || 0.98, status, Date.now());
 
   appendAudit({ doctor_id: req.doctor_id, device_id: req.device_id, action: 'create', entity_type: 'prescription', entity_id: prescription_id, patient_id: req.params.id });
   res.status(201).json({ prescription_id });

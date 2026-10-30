@@ -5,14 +5,35 @@
 const API_BASE = '/api';
 const TOKEN_KEY = 'swasthya_auth_token';
 const DEVICE_KEY = 'swasthya_device_id';
+const LOCK_KEY = 'swasthya_session_locked';
 
 export function getStoredToken() {
-  return localStorage.getItem(TOKEN_KEY) || 'ef014442b4998eb6bff2895a11f66ad6a63d22e604c95bc051dadb543c752fee';
+  if (typeof localStorage !== 'undefined' && localStorage.getItem(LOCK_KEY) === 'true') {
+    return null;
+  }
+  return typeof localStorage !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
 }
 
 export function setStoredToken(token) {
-  if (token) localStorage.setItem(TOKEN_KEY, token);
-  else localStorage.removeItem(TOKEN_KEY);
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.removeItem(LOCK_KEY);
+  } else {
+    localStorage.removeItem(TOKEN_KEY);
+  }
+}
+
+export function clearSessionLock() {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem(LOCK_KEY);
+  }
+}
+
+export function setSessionLock() {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem(LOCK_KEY, 'true');
+    localStorage.removeItem(TOKEN_KEY);
+  }
 }
 
 export function getDeviceId() {
@@ -59,6 +80,8 @@ async function request(endpoint, options = {}) {
 }
 
 export const api = {
+  request,
+
   // Health
   checkHealth: () => request('/health'),
 
@@ -134,6 +157,27 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(updates),
     }),
+
+  createPrescription: (patientId, encounterId, prescriptionData) =>
+    request(`/patients/${patientId}/encounters/${encounterId}/prescriptions`, {
+      method: 'POST',
+      body: JSON.stringify(prescriptionData),
+    }),
+
+  // Audio Recordings
+  saveAudioMetadata: (patientId, metadata) =>
+    request(`/patients/${patientId}/audio`, {
+      method: 'POST',
+      body: JSON.stringify(metadata),
+    }),
+
+  getAudioRecordings: (patientId) => request(`/patients/${patientId}/audio`),
+
+  // Clinical Records (for Reports Tab)
+  getClinicalRecords: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return request(`/reports/clinical-records${qs ? `?${qs}` : ''}`);
+  },
 
   checkAllergy: (patientId, drugNames) =>
     request(`/allergy-check`, {

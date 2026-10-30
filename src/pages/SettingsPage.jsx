@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSync } from '../context/SyncContext';
+import { useToast } from '../context/ToastContext';
 import AppHeader from '../components/layout/AppHeader';
 import BottomNav from '../components/layout/BottomNav';
 
 export default function SettingsPage() {
-  const { doctor, stationInfo, sessionMode, dispatch: authDispatch } = useAuth();
+  const navigate = useNavigate();
+  const { showToast } = useToast();
+  const { doctor, stationInfo, sessionMode, logout } = useAuth();
   const { status, conflictCount, pendingCount, dispatch: syncDispatch } = useSync();
 
   const [serverUrl, setServerUrl] = useState('http://localhost:4000');
@@ -262,8 +266,12 @@ export default function SettingsPage() {
               Purge Audio/Scan Cache
             </button>
             <button
-              onClick={() => authDispatch({ type: 'LOGOUT' })}
-              className="px-4 py-2 rounded-xl bg-error-container text-error font-bold text-label-sm hover:bg-error-container/80 transition-colors flex items-center gap-1.5"
+              onClick={() => {
+                logout();
+                showToast('Shift ended. Terminal locked successfully.', 'info');
+                navigate('/login');
+              }}
+              className="px-4 py-2 rounded-xl bg-error-container text-error font-bold text-label-sm hover:bg-error-container/80 transition-colors flex items-center gap-1.5 active:scale-95 shadow-sm"
             >
               <span className="material-symbols-outlined text-[18px]">logout</span>
               <span>Lock & End Shift</span>

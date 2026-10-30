@@ -31,6 +31,7 @@ export default function RegisterPage() {
     legalName: '',
     email: '',
     phone: '',
+    accountRole: 'doctor', // 'doctor' | 'staff'
     regId: 'MCI-2018-847291',
     council: LICENSING_COUNCILS[0],
     specialty: SPECIALTIES[0],
@@ -45,6 +46,7 @@ export default function RegisterPage() {
   const [showPass, setShowPass] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [registeredRole, setRegisteredRole] = useState('doctor');
   const [errors, setErrors] = useState({});
 
   const update = (key, val) => setForm(f => ({ ...f, [key]: val }));
@@ -82,38 +84,69 @@ export default function RegisterPage() {
 
   const strength = getStrength(form.passphrase);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const newErrors = {};
-    if (!form.legalName) newErrors.legalName = 'Required';
-    if (!form.email) newErrors.email = 'Required';
-    if (!form.passphrase) newErrors.passphrase = 'Required';
+    if (!form.legalName) newErrors.legalName = 'Full Name is required';
+    if (!form.email) newErrors.email = 'Official Email is required';
+    if (!form.passphrase) newErrors.passphrase = 'Passphrase is required';
+    if (form.passphrase.length < 6) newErrors.passphrase = 'Must be at least 6 characters';
     if (form.passphrase !== form.passphraseConfirm) newErrors.passphraseConfirm = 'Passphrases do not match';
-    if (!form.attestation) newErrors.attestation = 'You must attest';
+    if (!form.attestation) newErrors.attestation = 'You must accept the medical licensure attestation';
     if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+    setRegisteredRole(form.accountRole);
+
+    try {
+      const pinCode = form.pin.join('');
+      await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.legalName,
+          email: form.email,
+          passphrase: form.passphrase,
+          pin: pinCode.length === 6 ? pinCode : null,
+          role: form.accountRole,
+          council_number: form.regId,
+          specialty: form.specialty,
+        }),
+      });
       setSubmitted(true);
-    }, 1200);
+    } catch {
+      // Offline fallback
+      setSubmitted(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (submitted) {
+    const isDoctor = registeredRole === 'doctor';
     return (
       <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-8 gap-6 text-center">
-        <div className="w-20 h-20 rounded-full bg-primary-fixed flex items-center justify-center">
+        <div className="w-20 h-20 rounded-full bg-primary-fixed flex items-center justify-center shadow-lg">
           <span className="material-symbols-outlined text-[44px] text-primary" style={{ fontVariationSettings: '"FILL" 1' }}>task_alt</span>
         </div>
-        <h1 className="text-headline-md text-on-surface font-bold">Node Certificate Issued</h1>
-        <p className="text-body-md text-on-surface-variant max-w-sm">
-          Your registration has been submitted for verification. You will receive your credentials once your medical license is confirmed.
-        </p>
+        <div className="flex flex-col gap-1 max-w-md">
+          <span className="text-[12px] font-bold uppercase tracking-wider text-secondary">
+            {isDoctor ? 'DOCTOR ACCOUNT REGISTRATION' : 'STAFF ACCOUNT REGISTRATION'}
+          </span>
+          <h1 className="text-headline-md text-on-surface font-bold">
+            {isDoctor ? 'Registration Submitted for Verification' : 'Staff Account Activated'}
+          </h1>
+          <p className="text-body-md text-on-surface-variant mt-2 leading-relaxed">
+            {isDoctor
+              ? 'Doctor accounts undergo state medical council & administrative verification before electronic prescription sign-off is unlocked. You will be notified once approved.'
+              : 'Your staff account has been provisioned on this clinic node. You can now log in to register patients and record ambient clinical intakes.'}
+          </p>
+        </div>
         <button
           onClick={() => navigate('/login')}
-          className="w-full max-w-sm h-[52px] bg-primary text-on-primary rounded-xl text-label-lg font-semibold flex items-center justify-center gap-2 shadow-md"
+          className="w-full max-w-sm h-[52px] bg-primary text-on-primary rounded-xl text-label-lg font-semibold flex items-center justify-center gap-2 shadow-md hover:bg-primary-container transition-colors"
         >
           <span className="material-symbols-outlined text-[20px]">arrow_back</span>
-          Return to Doctor Login
+          <span>Return to Login Screen</span>
         </button>
       </div>
     );
@@ -318,17 +351,52 @@ export default function RegisterPage() {
               />
             </div>
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-label-md text-on-surface block">Clinical Station Role</label>
-            <div className="flex items-center h-[52px] bg-surface-container rounded-lg px-3.5 gap-2">
-              <span className="material-symbols-outlined text-secondary text-headline-sm">medical_services</span>
-              <input
-                type="text"
-                value={form.role}
-                readOnly
-                className="flex-1 h-full bg-transparent text-on-surface text-body-md font-semibold cursor-not-allowed focus:outline-none"
-              />
-              <span className="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant text-label-sm uppercase">Locked</span>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-label-md text-on-surface font-semibold block">Select Account Role *</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <label
+                onClick={() => { update('accountRole', 'doctor'); update('role', 'Attending Field Physician'); }}
+                className={`p-3 rounded-xl border-2 flex items-start gap-2.5 cursor-pointer transition-all ${form.accountRole === 'doctor'
+                  ? 'border-primary bg-primary/10'
+                  : 'border-surface-container bg-surface-container-low hover:border-outline'
+                  }`}
+              >
+                <input
+                  type="radio"
+                  name="role-select"
+                  checked={form.accountRole === 'doctor'}
+                  onChange={() => { }}
+                  className="mt-0.5 accent-primary"
+                />
+                <div className="flex flex-col">
+                  <span className="text-label-md font-bold text-on-surface">Doctor / Clinician</span>
+                  <span className="text-[11px] text-on-surface-variant">
+                    Full Prescriptions, Clinical Review &amp; AI Assistant. Requires medical council verification.
+                  </span>
+                </div>
+              </label>
+
+              <label
+                onClick={() => { update('accountRole', 'staff'); update('role', 'Staff Nurse / Community Health Officer'); }}
+                className={`p-3 rounded-xl border-2 flex items-start gap-2.5 cursor-pointer transition-all ${form.accountRole === 'staff'
+                  ? 'border-primary bg-primary/10'
+                  : 'border-surface-container bg-surface-container-low hover:border-outline'
+                  }`}
+              >
+                <input
+                  type="radio"
+                  name="role-select"
+                  checked={form.accountRole === 'staff'}
+                  onChange={() => { }}
+                  className="mt-0.5 accent-primary"
+                />
+                <div className="flex flex-col">
+                  <span className="text-label-md font-bold text-on-surface">Staff / Nurse / Health Worker</span>
+                  <span className="text-[11px] text-on-surface-variant">
+                    Patient Registration, Triage Vitals, Ambient Dictation Intake. Instant activation.
+                  </span>
+                </div>
+              </label>
             </div>
           </div>
         </div>
@@ -369,7 +437,7 @@ export default function RegisterPage() {
                   <span className={`text-label-sm font-semibold ${strength.level >= 3 ? 'text-primary' : strength.level === 2 ? 'text-[#E08A00]' : 'text-error'}`}>{strength.label}</span>
                 </div>
                 <div className="grid grid-cols-4 gap-1.5 h-1.5">
-                  {[1,2,3,4].map(i => (
+                  {[1, 2, 3, 4].map(i => (
                     <div key={i} className={`rounded-full ${i <= strength.level ? strength.color : 'bg-surface-container'}`}></div>
                   ))}
                 </div>

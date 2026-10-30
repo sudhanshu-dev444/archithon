@@ -9,6 +9,11 @@ const DEVICE_ID = 'DEVICE-GANIYARI-ALPHA';
 const NOW = Date.now();
 
 export function seedDatabase() {
+  // In production, prevent automatically seeding insecure default credentials
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DEMO_SEED !== 'true') {
+    return;
+  }
+
   const db = getDb();
 
   // ── Device ──────────────────────────────────────────────────
@@ -24,9 +29,21 @@ export function seedDatabase() {
     const pin  = createHash('sha256').update('123456').digest('hex');
     const pass = createHash('sha256').update('demo1234').digest('hex');
     db.prepare(`
-      INSERT INTO doctors (doctor_id, name, email, role, pin_hash, passphrase_hash, council_number, specialty, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(DOCTOR_ID, 'Dr. Priya Sharma', 'priya.sharma@ganiyari.in', 'clinician', pin, pass, 'MCI-CG-44821', 'General Medicine', NOW);
+      INSERT INTO doctors (doctor_id, name, email, role, pin_hash, passphrase_hash, council_number, specialty, role_verified, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+    `).run(DOCTOR_ID, 'Dr. Priya Sharma', 'priya.sharma@ganiyari.in', 'doctor', pin, pass, 'MCI-CG-44821', 'General Medicine', NOW);
+  }
+
+  // ── Demo staff / nurse account ────────────────────────────────
+  const STAFF_ID = 'STAFF-001';
+  const existingStaff = db.prepare('SELECT doctor_id FROM doctors WHERE doctor_id = ?').get(STAFF_ID);
+  if (!existingStaff) {
+    const pin  = createHash('sha256').update('123456').digest('hex');
+    const pass = createHash('sha256').update('demo1234').digest('hex');
+    db.prepare(`
+      INSERT INTO doctors (doctor_id, name, email, role, pin_hash, passphrase_hash, council_number, specialty, role_verified, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+    `).run(STAFF_ID, 'Anita Patel (Staff Nurse)', 'anita.staff@ganiyari.in', 'staff', pin, pass, 'INC-CG-88219', 'Community Nursing', NOW);
   }
 
   // ── Patients ─────────────────────────────────────────────────
@@ -113,5 +130,7 @@ export function seedDatabase() {
     );
   }
 
-  console.log('✅ Database seeded with demo data');
+  if (process.env.NODE_ENV !== 'production' || process.env.DEBUG === 'true') {
+    console.log('✅ Database initialized with demo data');
+  }
 }

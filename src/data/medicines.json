@@ -1,0 +1,338 @@
+{
+  "medicines": [
+    {
+      "id": "MED-001",
+      "name": "Paracetamol",
+      "generic": "Acetaminophen",
+      "strength": "650mg",
+      "form": "Tablet",
+      "category": "Analgesic / Antipyretic",
+      "dosage": "1 tablet q6h PRN (max 4g/day)",
+      "contraindications": ["Severe hepatic impairment", "Active liver disease"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-002",
+      "name": "Paracetamol Paediatric Syrup",
+      "generic": "Acetaminophen",
+      "strength": "120mg/5ml",
+      "form": "Syrup",
+      "category": "Analgesic / Antipyretic",
+      "dosage": "15 mg/kg per dose q4-6h",
+      "contraindications": ["Severe hepatic impairment"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-003",
+      "name": "Amoxicillin",
+      "generic": "Amoxicillin Trihydrate",
+      "strength": "500mg",
+      "form": "Capsule",
+      "category": "Beta-lactam Antibiotic (Penicillin group)",
+      "dosage": "500mg TDS for 5-7 days",
+      "contraindications": ["Penicillin allergy", "History of beta-lactam anaphylaxis"],
+      "safeForPenicillinAllergy": false,
+      "allergyWarning": "CRITICAL: Penicillin group cross-reactivity. High risk of fatal anaphylaxis."
+    },
+    {
+      "id": "MED-004",
+      "name": "Amoxicillin + Clavulanic Acid (Augmentin)",
+      "generic": "Co-amoxiclav",
+      "strength": "625mg",
+      "form": "Tablet",
+      "category": "Beta-lactam + Beta-lactamase Inhibitor",
+      "dosage": "625mg BD for 5-7 days",
+      "contraindications": ["Penicillin hypersensitivity", "Amoxicillin-associated jaundice"],
+      "safeForPenicillinAllergy": false,
+      "allergyWarning": "CRITICAL: Penicillin cross-reactivity."
+    },
+    {
+      "id": "MED-005",
+      "name": "Azithromycin",
+      "generic": "Azithromycin",
+      "strength": "500mg",
+      "form": "Tablet",
+      "category": "Macrolide Antibiotic",
+      "dosage": "500mg OD for 3-5 days (1 hour before food)",
+      "contraindications": ["Hypersensitivity to macrolides", "Severe hepatic impairment"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-006",
+      "name": "Cefixime",
+      "generic": "Cefixime Trihydrate",
+      "strength": "200mg",
+      "form": "Tablet",
+      "category": "Cephalosporin (3rd Gen)",
+      "dosage": "200mg BD for 5-7 days",
+      "contraindications": ["Severe cephalosporin/penicillin anaphylaxis"],
+      "safeForPenicillinAllergy": false,
+      "allergyWarning": "CAUTION: Potential 5-10% cross-reactivity in severe penicillin allergy."
+    },
+    {
+      "id": "MED-007",
+      "name": "Ciprofloxacin",
+      "generic": "Ciprofloxacin Hydrochloride",
+      "strength": "500mg",
+      "form": "Tablet",
+      "category": "Fluoroquinolone Antibiotic",
+      "dosage": "500mg BD for 5-7 days",
+      "contraindications": ["Pregnancy", "Children <18y", "Tendonitis history"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-008",
+      "name": "Doxycycline",
+      "generic": "Doxycycline Hyclate",
+      "strength": "100mg",
+      "form": "Capsule",
+      "category": "Tetracycline Antibiotic",
+      "dosage": "100mg BD for 7 days (scrub typhus/malaria)",
+      "contraindications": ["Pregnancy", "Children <8y"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-009",
+      "name": "Artemether + Lumefantrine",
+      "generic": "Coartem (ACT)",
+      "strength": "80/480mg",
+      "form": "Tablet",
+      "category": "Antimalarial (Artemisinin Combination)",
+      "dosage": "1 tablet BD with fatty meal for 3 days",
+      "contraindications": ["First trimester pregnancy", "Severe cardiac arrhythmia"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-010",
+      "name": "Chloroquine Phosphate",
+      "generic": "Chloroquine",
+      "strength": "250mg",
+      "form": "Tablet",
+      "category": "Antimalarial",
+      "dosage": "600mg base stat, then 300mg at 6h, 24h, 48h",
+      "contraindications": ["Retinopathy", "Psoriasis", "G6PD deficiency"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-011",
+      "name": "Primaquine",
+      "generic": "Primaquine Phosphate",
+      "strength": "15mg",
+      "form": "Tablet",
+      "category": "Antimalarial (Anti-relapse)",
+      "dosage": "15mg OD for 14 days (P. vivax radical cure)",
+      "contraindications": ["G6PD deficiency (fatal hemolysis risk)", "Pregnancy"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-012",
+      "name": "Oral Rehydration Salts (ORS)",
+      "generic": "WHO Reduced Osmolarity ORS",
+      "strength": "20.5g Sachet",
+      "form": "Powder",
+      "category": "Electrolyte & Fluid Replenishment",
+      "dosage": "Dissolve 1 sachet in 1L clean water; drink ad libitum",
+      "contraindications": ["Intractable vomiting", "Paralytic ileus"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-013",
+      "name": "Metronidazole",
+      "generic": "Metronidazole",
+      "strength": "400mg",
+      "form": "Tablet",
+      "category": "Antiprotozoal / Antibacterial",
+      "dosage": "400mg TDS for 5-7 days",
+      "contraindications": ["Alcohol consumption (disulfiram reaction)", "1st trimester pregnancy"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-014",
+      "name": "Albendazole",
+      "generic": "Albendazole",
+      "strength": "400mg",
+      "form": "Chewable Tablet",
+      "category": "Anthelmintic",
+      "dosage": "400mg single dose; repeat in 2 weeks",
+      "contraindications": ["Pregnancy"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-015",
+      "name": "Cetirizine",
+      "generic": "Cetirizine Dihydrochloride",
+      "strength": "10mg",
+      "form": "Tablet",
+      "category": "Antihistamine (H1 Receptor Blocker)",
+      "dosage": "10mg OD at bedtime",
+      "contraindications": ["End-stage renal disease"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-016",
+      "name": "Pheniramine Maleate (Avil)",
+      "generic": "Pheniramine Maleate",
+      "strength": "25mg",
+      "form": "Tablet",
+      "category": "Antihistamine (Sedating)",
+      "dosage": "25mg BD or TDS PRN",
+      "contraindications": ["Prostatic hypertrophy", "Glaucoma"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-017",
+      "name": "Omeprazole",
+      "generic": "Omeprazole",
+      "strength": "20mg",
+      "form": "Capsule",
+      "category": "Proton Pump Inhibitor (PPI)",
+      "dosage": "20mg OD 30 min before breakfast",
+      "contraindications": ["Known PPI hypersensitivity"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-018",
+      "name": "Pantoprazole",
+      "generic": "Pantoprazole Sodium",
+      "strength": "40mg",
+      "form": "Tablet",
+      "category": "Proton Pump Inhibitor (PPI)",
+      "dosage": "40mg OD 30 min before breakfast",
+      "contraindications": ["Severe hepatic cirrhosis"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-019",
+      "name": "Ondansetron",
+      "generic": "Ondansetron Hydrochloride",
+      "strength": "4mg",
+      "form": "Mouth Dissolving Tablet",
+      "category": "Antiemetic (5-HT3 Antagonist)",
+      "dosage": "4-8mg TDS PRN for nausea/vomiting",
+      "contraindications": ["Prolonged QT syndrome", "Concurrent apomorphine"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-020",
+      "name": "Amlodipine",
+      "generic": "Amlodipine Besylate",
+      "strength": "5mg",
+      "form": "Tablet",
+      "category": "Calcium Channel Blocker (Antihypertensive)",
+      "dosage": "5mg OD in the morning (titrate to 10mg)",
+      "contraindications": ["Severe hypotension", "Cardiogenic shock"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-021",
+      "name": "Telmisartan",
+      "generic": "Telmisartan",
+      "strength": "40mg",
+      "form": "Tablet",
+      "category": "Angiotensin II Receptor Blocker (ARB)",
+      "dosage": "40mg OD in the morning",
+      "contraindications": ["Pregnancy (teratogenic)", "Bilateral renal artery stenosis"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-022",
+      "name": "Enalapril",
+      "generic": "Enalapril Maleate",
+      "strength": "5mg",
+      "form": "Tablet",
+      "category": "ACE Inhibitor (Antihypertensive)",
+      "dosage": "5mg OD initially, up to 10-20mg OD",
+      "contraindications": ["Pregnancy", "History of angioedema"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-023",
+      "name": "Metformin",
+      "generic": "Metformin Hydrochloride",
+      "strength": "500mg",
+      "form": "Tablet",
+      "category": "Biguanide (Antidiabetic)",
+      "dosage": "500mg BD with meals (titrate to 1000mg BD)",
+      "contraindications": ["eGFR <30 mL/min (lactic acidosis risk)", "Acute metabolic acidosis"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-024",
+      "name": "Glimepiride",
+      "generic": "Glimepiride",
+      "strength": "1mg",
+      "form": "Tablet",
+      "category": "Sulfonylurea (Antidiabetic)",
+      "dosage": "1-2mg OD immediately before breakfast",
+      "contraindications": ["Type 1 diabetes", "Diabetic ketoacidosis", "Severe hypoglycemia risk"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-025",
+      "name": "Salbutamol Inhaler (Albuterol)",
+      "generic": "Salbutamol Sulfate",
+      "strength": "100mcg/puff",
+      "form": "Metered Dose Inhaler (MDI)",
+      "category": "Short-Acting Beta-2 Agonist (Bronchodilator)",
+      "dosage": "2 puffs q4-6h PRN with spacer",
+      "contraindications": ["Thyrotoxicosis", "Cardiac tachyarrhythmias"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-026",
+      "name": "Budesonide Inhaler",
+      "generic": "Budesonide",
+      "strength": "200mcg/puff",
+      "form": "Metered Dose Inhaler (MDI)",
+      "category": "Inhaled Corticosteroid (Anti-inflammatory)",
+      "dosage": "1-2 puffs BD; rinse mouth after use",
+      "contraindications": ["Active untreated pulmonary tuberculosis"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-027",
+      "name": "Ibuprofen",
+      "generic": "Ibuprofen",
+      "strength": "400mg",
+      "form": "Tablet",
+      "category": "NSAID (Analgesic / Anti-inflammatory)",
+      "dosage": "400mg TDS after meals",
+      "contraindications": ["Active peptic ulcer disease", "Severe heart failure", "3rd trimester pregnancy", "Dengue fever (bleeding risk)"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-028",
+      "name": "Zinc Sulfate Tablets",
+      "generic": "Zinc Sulfate Dispersible",
+      "strength": "20mg",
+      "form": "Dispersible Tablet",
+      "category": "Trace Mineral / Diarrhea Adjunct",
+      "dosage": "20mg OD for 14 days (10mg if <6 months)",
+      "contraindications": ["Copper deficiency"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-029",
+      "name": "Iron + Folic Acid (IFA)",
+      "generic": "Ferrous Sulfate 100mg + Folic Acid 0.5mg",
+      "strength": "100mg elemental iron",
+      "form": "Enteric-coated Tablet",
+      "category": "Hematinic / Antianemic",
+      "dosage": "1 tablet OD after meals for 100 days",
+      "contraindications": ["Thalassemia major", "Hemochromatosis"],
+      "safeForPenicillinAllergy": true
+    },
+    {
+      "id": "MED-030",
+      "name": "Ranitidine / Famotidine",
+      "generic": "Famotidine",
+      "strength": "20mg",
+      "form": "Tablet",
+      "category": "H2 Receptor Antagonist",
+      "dosage": "20mg BD or 40mg at bedtime",
+      "contraindications": ["Severe renal impairment without dose adjustment"],
+      "safeForPenicillinAllergy": true
+    }
+  ]
+}
+

@@ -4,18 +4,38 @@
 
 import { DatabaseSync } from 'node:sqlite';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { env } from '../config/env.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = path.join(__dirname, 'swasthya.db');
+const DB_PATH = env.dbPath || path.join(__dirname, 'swasthya.db');
 
 let db;
 
 export function getDb() {
   if (!db) {
+    // Ensure parent directory exists
+    const dir = path.dirname(DB_PATH);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+    }
+
     db = new DatabaseSync(DB_PATH);
     db.exec('PRAGMA journal_mode = WAL');
     db.exec('PRAGMA foreign_keys = ON');
+    db.exec('PRAGMA synchronous = NORMAL');
+    db.exec('PRAGMA temp_store = MEMORY');
+
+    // Secure database file permissions (owner read/write only)
+    try {
+      if (fs.existsSync(DB_PATH)) {
+        fs.chmodSync(DB_PATH, 0o600);
+      }
+    } catch {
+      // Ignore on Windows if restricted
+    }
+
     initSchema();
   }
   return db;
@@ -262,5 +282,39 @@ function initSchema() {
       last_seq      INTEGER NOT NULL DEFAULT 0,
       updated_at    INTEGER NOT NULL
     );
+
+    -- ----------------------------------------------------------------
+    -- Audio Recordings (Linked to Patient & Encounter)
+    -- ----------------------------------------------------------------
+    CREATE TABLE IF NOT EXISTS audio_recordings (
+      recording_id     TEXT PRIMARY KEY,
+      patient_id       TEXT NOT NULL,
+      encounter_id     TEXT,
+      duration_seconds INTEGER NOT NULL,
+      language         TEXT NOT NULL DEFAULT 'hi',
+      recorded_by      TEXT NOT NULL,
+      recorded_by_role TEXT NOT NULL DEFAULT 'Doctor',
+      transcript       TEXT,
+      file_name        TEXT,
+      created_at       INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_audio_patient ON audio_recordings(patient_id);
   `);
+
+  // Safe incremental migrations for existing tables
+  const runMigration = (sql) => {
+    try {
+      db.exec(sql);
+    } catch {
+      // Column or table already exists in SQLite
+    }
+  };
+
+  runMigration('ALTER TABLE patients ADD COLUMN date_of_birth TEXT');
+  runMigration('ALTER TABLE patients ADD COLUMN address TEXT');
+  runMigration('ALTER TABLE patients ADD COLUMN emergency_contact_name TEXT');
+  runMigration('ALTER TABLE patients ADD COLUMN emergency_contact_phone TEXT');
+  runMigration('ALTER TABLE patients ADD COLUMN photo_url TEXT');
+  runMigration('ALTER TABLE doctors ADD COLUMN role_verified INTEGER NOT NULL DEFAULT 1');
 }

@@ -4,14 +4,14 @@
 
 import { getDb } from '../db/schema.js';
 import { createHash } from 'crypto';
+import { env } from '../config/env.js';
 
 /**
- * Generates a simple token from doctor_id + device_id + timestamp.
- * Replace with JWT in production.
+ * Generates a cryptographic token from doctor_id + device_id + timestamp + token secret.
  */
 export function generateToken(doctorId, deviceId) {
-  const raw = `${doctorId}:${deviceId}:${Date.now()}`;
-  return createHash('sha256').update(raw + process.env.TOKEN_SECRET || 'swasthya-secret-2026').digest('hex');
+  const raw = `${doctorId}:${deviceId}:${Date.now()}:${env.tokenSecret}`;
+  return createHash('sha256').update(raw).digest('hex');
 }
 
 /**
@@ -44,6 +44,10 @@ export function requireAuth(req, res, next) {
 
   req.doctor_id = session.doctor_id;
   req.device_id = session.device_id;
+
+  const doc = db.prepare('SELECT role, role_verified FROM doctors WHERE doctor_id = ?').get(session.doctor_id);
+  req.user_role = doc ? doc.role : (session.doctor_id.startsWith('EMERGENCY') ? 'emergency' : 'doctor');
+  req.role_verified = doc ? doc.role_verified : 1;
   next();
 }
 

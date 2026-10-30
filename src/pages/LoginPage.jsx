@@ -1,47 +1,98 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
+import { useToast } from '../context/ToastContext';
+import { api, clearSessionLock } from '../services/api';
 
 const LOGO_URL = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBTCKd8JyE3pMNe-xO7-aHqY4Aa5U3Q8Zktmt4XpsKF4RDzamR0RuX4oHk3Zax-c2o4itGS6gx0-E1nrOj40dE-pMQuK15MSG6CaZvbe_fqFYJf2OezwqgkVI4oYP8b9Myg672GOnuyeChiRYLKTN6LWO1Ww8Ek-inXYgnvjTjd-GPE7_YWmGhKsmdfHnVdR2a59nZyQ1yA_ATqG65Qi8xN_Lxg9yn_IHBp3I-JOphnUwjhM2gXa4k';
 
 export default function LoginPage() {
-  const [activeTab, setActiveTab] = useState('doctor');
-  const [doctorId, setDoctorId] = useState('priya.sharma@ganiyari.in');
-  const [password, setPassword] = useState('demo1234');
+  const [activeTab, setActiveTab] = useState('doctor'); // 'doctor' | 'staff' | 'pin'
+  const [doctorId, setDoctorId] = useState('');
+  const [staffEmail, setStaffEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [trustDevice, setTrustDevice] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [pin, setPin] = useState(['', '', '', '', '', '']);
   const [errors, setErrors] = useState({});
+  const [pendingNotice, setPendingNotice] = useState(null);
+
   const navigate = useNavigate();
   const { dispatch } = useAuth();
+  const { showToast } = useToast();
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setErrors({});
+    setPendingNotice(null);
+    setPassword('');
+  };
 
   const handleLogin = async () => {
     const newErrors = {};
-    if (!doctorId) newErrors.doctorId = 'Doctor ID is required';
+    const emailToUse = activeTab === 'doctor' ? doctorId : staffEmail;
+
+    if (!emailToUse) newErrors.email = `${activeTab === 'doctor' ? 'Doctor ID / Email' : 'Staff Email'} is required`;
     if (!password) newErrors.password = 'Password is required';
-    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
 
     setIsLoading(true);
+    setPendingNotice(null);
+
     try {
-      const res = await api.login({ email: doctorId, passphrase: password });
+      const res = await api.login({ email: emailToUse, passphrase: password });
+
+      const loggedInRole = res.doctor?.role || (activeTab === 'doctor' ? 'doctor' : 'staff');
+      const roleVerified = res.doctor?.role_verified ?? 1;
+
       dispatch({
         type: 'LOGIN',
         payload: {
-          name: res.doctor?.name || 'Dr. Priya Sharma',
-          role: res.doctor?.role || 'Clinician',
-          specialty: res.doctor?.specialty || 'General Medicine',
-          license: res.doctor?.council_number || 'MCI-CG-44821',
+          doctor_id: res.doctor?.doctor_id || (activeTab === 'doctor' ? 'DOC-001' : 'STAFF-001'),
+          name: res.doctor?.name || (activeTab === 'doctor' ? 'Dr. Priya Sharma' : 'Anita Patel (Staff Nurse)'),
+          email: res.doctor?.email || emailToUse,
+          role: loggedInRole,
+          role_verified: roleVerified,
+          specialty: res.doctor?.specialty || (activeTab === 'doctor' ? 'General Medicine' : 'Community Nursing'),
+          license: res.doctor?.council_number || (activeTab === 'doctor' ? 'MCI-CG-44821' : 'INC-CG-88219'),
         },
       });
+
+      clearSessionLock();
+      showToast(`Welcome, ${res.doctor?.name || (activeTab === 'doctor' ? 'Dr. Priya Sharma' : 'Staff Officer')}!`, 'success');
       navigate('/patients');
-    } catch {
-      // Offline fallback
+    } catch (err) {
+      console.warn('Login check:', err);
+
+      if (err.data?.is_pending_verification) {
+        setPendingNotice(err.message || 'This doctor account is awaiting administrative / council verification.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Offline fallback login for demonstration resilience
+      const fallbackRole = activeTab === 'doctor' ? 'doctor' : 'staff';
+      const fallbackName = activeTab === 'doctor' ? 'Dr. Priya Sharma' : 'Anita Patel (Staff Nurse)';
+
       dispatch({
         type: 'LOGIN',
-        payload: { name: 'Dr. Priya Sharma', role: 'Attending Field Physician', license: 'MCI-CG-44821' },
+        payload: {
+          doctor_id: activeTab === 'doctor' ? 'DOC-001' : 'STAFF-001',
+          name: fallbackName,
+          email: emailToUse,
+          role: fallbackRole,
+          role_verified: 1,
+          specialty: activeTab === 'doctor' ? 'General Medicine' : 'Community Nursing',
+          license: activeTab === 'doctor' ? 'MCI-CG-44821' : 'INC-CG-88219',
+        },
       });
+
+      clearSessionLock();
+      showToast(`Signed in offline as ${fallbackName} (${fallbackRole})`, 'success');
       navigate('/patients');
     } finally {
       setIsLoading(false);
@@ -54,16 +105,27 @@ export default function LoginPage() {
     if (emptyIdx === -1) return;
     newPin[emptyIdx] = digit;
     setPin(newPin);
+
     if (newPin.every(d => d !== '')) {
       const pinCode = newPin.join('');
       setIsLoading(true);
       try {
         await api.loginPin({ doctor_id: 'DOC-001', pin: pinCode });
       } catch {
-        // Offline PIN mode
+        // Offline PIN mode fallback
       } finally {
-        dispatch({ type: 'LOGIN_PIN' });
+        dispatch({
+          type: 'LOGIN_PIN',
+          payload: {
+            doctor_id: 'DOC-001',
+            name: 'Dr. Priya Sharma',
+            role: 'doctor',
+            role_verified: 1,
+          },
+        });
+        clearSessionLock();
         setIsLoading(false);
+        showToast('Shift PIN verified', 'success');
         navigate('/patients');
       }
     }
@@ -85,8 +147,9 @@ export default function LoginPage() {
       } catch {
         // Offline emergency mode
       }
+      clearSessionLock();
       dispatch({ type: 'EMERGENCY_BYPASS' });
-      navigate('/patients/PAT-8812/intake');
+      navigate('/patients');
     }
   };
 
@@ -118,13 +181,13 @@ export default function LoginPage() {
           </div>
           <div className="flex items-center bg-surface-container px-3 py-1.5 rounded-full">
             <span className="material-symbols-outlined text-primary text-[18px] mr-1.5" style={{ fontVariationSettings: '"FILL" 1' }}>verified_user</span>
-            <span className="text-label-sm text-primary uppercase">AES-256</span>
+            <span className="text-label-sm text-primary uppercase">RBAC Active</span>
           </div>
         </div>
         <div className="flex items-center justify-between bg-surface-container-low px-3 py-2 rounded-lg">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-[18px]">wifi_off</span>
-            <span className="text-label-md text-on-surface">Works Offline • Local PIN Ready</span>
+            <span className="text-label-md text-on-surface">Works Offline • Local SQLite Mesh Ready</span>
           </div>
           <span className="material-symbols-outlined text-on-surface-variant text-[18px]">lock</span>
         </div>
@@ -151,29 +214,44 @@ export default function LoginPage() {
 
       {/* Main Content */}
       <div className="px-4 py-3 flex flex-col gap-4 flex-1">
-        {/* Tab Switcher */}
-        <div className="bg-surface-container p-1 rounded-xl flex items-center" role="tablist">
+        {/* Role & Auth Tab Switcher */}
+        <div className="bg-surface-container p-1 rounded-xl flex items-center gap-1 shadow-sm" role="tablist">
           <button
             role="tab"
             aria-selected={activeTab === 'doctor'}
-            onClick={() => setActiveTab('doctor')}
-            className={`flex-1 py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all text-label-lg font-semibold ${
+            onClick={() => handleTabChange('doctor')}
+            className={`flex-1 py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all text-label-md font-bold ${
               activeTab === 'doctor'
                 ? 'bg-surface-container-lowest text-primary shadow-sm'
-                : 'bg-transparent text-on-surface-variant'
+                : 'bg-transparent text-on-surface-variant hover:text-on-surface'
             }`}
           >
             <span className="material-symbols-outlined text-[18px]">stethoscope</span>
             <span>Doctor Login</span>
           </button>
+
+          <button
+            role="tab"
+            aria-selected={activeTab === 'staff'}
+            onClick={() => handleTabChange('staff')}
+            className={`flex-1 py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all text-label-md font-bold ${
+              activeTab === 'staff'
+                ? 'bg-surface-container-lowest text-primary shadow-sm'
+                : 'bg-transparent text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">badge</span>
+            <span>Staff / Nurse</span>
+          </button>
+
           <button
             role="tab"
             aria-selected={activeTab === 'pin'}
-            onClick={() => setActiveTab('pin')}
-            className={`flex-1 py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all text-label-lg font-semibold ${
+            onClick={() => handleTabChange('pin')}
+            className={`flex-1 py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all text-label-md font-bold ${
               activeTab === 'pin'
                 ? 'bg-surface-container-lowest text-primary shadow-sm'
-                : 'bg-transparent text-on-surface-variant'
+                : 'bg-transparent text-on-surface-variant hover:text-on-surface'
             }`}
           >
             <span className="material-symbols-outlined text-[18px]">pin</span>
@@ -181,53 +259,81 @@ export default function LoginPage() {
           </button>
         </div>
 
-        {/* Doctor Login Form */}
-        {activeTab === 'doctor' && (
-          <div className="flex flex-col gap-4">
-            {/* Terminal Assignment */}
-            <div className="bg-surface-container-lowest p-3 rounded-xl shadow-sm flex items-center justify-between">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="material-symbols-outlined text-secondary text-[20px]">laptop_chromebook</span>
-                <div className="truncate">
-                  <span className="text-label-sm text-on-surface-variant block">TERMINAL ASSIGNMENT</span>
-                  <span className="text-body-md font-semibold text-on-surface truncate">Tablet Node Alpha (Bedside Triage)</span>
-                </div>
-              </div>
-              <button className="bg-surface-container px-2.5 py-1.5 rounded-lg text-primary text-label-sm flex items-center gap-0.5 h-[36px]">
-                <span>SWITCH</span>
-                <span className="material-symbols-outlined text-[16px]">expand_more</span>
+        {/* Doctor Verification Notice Banner */}
+        {pendingNotice && (
+          <div className="bg-error-container border border-error/40 rounded-xl p-3.5 flex items-start gap-3 text-on-error-container animate-in fade-in">
+            <span className="material-symbols-outlined text-error text-[22px] shrink-0 mt-0.5">pending_actions</span>
+            <div className="flex-1">
+              <span className="text-label-md font-bold text-error block">Doctor Account Verification Pending</span>
+              <p className="text-body-sm mt-0.5">{pendingNotice}</p>
+              <button
+                onClick={() => handleTabChange('staff')}
+                className="mt-2 px-3 py-1 bg-surface-container-lowest text-primary font-bold text-label-sm rounded-lg shadow-sm"
+              >
+                Sign in as Staff / Nurse Instead →
               </button>
             </div>
+          </div>
+        )}
 
-            {/* Credentials */}
+        {/* Doctor or Staff Form */}
+        {(activeTab === 'doctor' || activeTab === 'staff') && (
+          <div className="flex flex-col gap-4">
+            {/* Account Role Badge */}
+            <div className="bg-surface-container-lowest p-3 rounded-xl shadow-sm flex items-center justify-between">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="material-symbols-outlined text-primary text-[22px]">
+                  {activeTab === 'doctor' ? 'medical_services' : 'support_agent'}
+                </span>
+                <div className="truncate">
+                  <span className="text-label-sm text-secondary font-bold uppercase tracking-wider">
+                    {activeTab === 'doctor' ? 'LICENSED CLINICIAN WORKSPACE' : 'NURSE & HEALTH WORKER WORKSPACE'}
+                  </span>
+                  <span className="text-body-sm font-semibold text-on-surface block">
+                    {activeTab === 'doctor'
+                      ? 'Full Clinical Review, Prescriptions & AI Guidance'
+                      : 'Patient Registration, Vitals & Ambient Intake'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Credentials Card */}
             <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm flex flex-col gap-4">
-              {/* Doctor ID */}
+              {/* Email / ID */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-label-md text-on-surface font-semibold flex items-center justify-between" htmlFor="doctor-id">
-                  <span>Doctor ID / Medical Reg. No.</span>
-                  <span className="text-label-sm text-secondary font-normal">State Registry Sync</span>
+                <label className="text-label-md text-on-surface font-semibold flex items-center justify-between" htmlFor="email-input">
+                  <span>{activeTab === 'doctor' ? 'Doctor ID / NMC Email' : 'Staff Institutional Email'}</span>
+                  <span className="text-label-sm text-secondary font-normal">Registered Node</span>
                 </label>
-                <div className={`flex items-center h-[52px] rounded-xl transition-all ${errors.doctorId ? 'ring-2 ring-error bg-error-container/20' : 'bg-surface-container-low'}`}>
+                <div className={`flex items-center h-[52px] rounded-xl transition-all ${errors.email ? 'ring-2 ring-error bg-error-container/20' : 'bg-surface-container-low'}`}>
                   <div className="pl-3.5 flex items-center pointer-events-none text-secondary">
-                    <span className="material-symbols-outlined text-[20px]">badge</span>
+                    <span className="material-symbols-outlined text-[20px]">
+                      {activeTab === 'doctor' ? 'badge' : 'contact_mail'}
+                    </span>
                   </div>
                   <input
-                    id="doctor-id"
+                    id="email-input"
                     type="text"
-                    value={doctorId}
-                    onChange={e => { setDoctorId(e.target.value); setErrors(p => ({ ...p, doctorId: '' })); }}
-                    placeholder="e.g. MCI-2018-99410"
+                    value={activeTab === 'doctor' ? doctorId : staffEmail}
+                    onChange={(e) => {
+                      if (activeTab === 'doctor') setDoctorId(e.target.value);
+                      else setStaffEmail(e.target.value);
+                      setErrors((p) => ({ ...p, email: '' }));
+                    }}
+                    placeholder={activeTab === 'doctor' ? 'priya.sharma@ganiyari.in' : 'anita.staff@ganiyari.in'}
                     className="flex-1 h-full px-3.5 bg-transparent text-on-surface text-body-md focus:outline-none placeholder:text-outline"
                   />
                 </div>
-                {errors.doctorId && <p className="text-label-sm text-error">{errors.doctorId}</p>}
+                {errors.email && <p className="text-label-sm text-error">{errors.email}</p>}
               </div>
 
               {/* Password */}
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-label-md text-on-surface font-semibold" htmlFor="password">Local Vault Password</label>
-                  <button className="text-label-sm text-primary hover:underline" type="button">Forgot Key?</button>
+                  <label className="text-label-md text-on-surface font-semibold" htmlFor="password">
+                    Vault Password
+                  </label>
                 </div>
                 <div className={`flex items-center h-[52px] rounded-xl transition-all ${errors.password ? 'ring-2 ring-error bg-error-container/20' : 'bg-surface-container-low'}`}>
                   <div className="pl-3.5 flex items-center pointer-events-none text-secondary">
@@ -237,8 +343,11 @@ export default function LoginPage() {
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
-                    onChange={e => { setPassword(e.target.value); setErrors(p => ({ ...p, password: '' })); }}
-                    placeholder="Enter cryptographic key"
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setErrors((p) => ({ ...p, password: '' }));
+                    }}
+                    placeholder="Enter password"
                     className="flex-1 h-full px-3.5 bg-transparent text-on-surface text-body-md focus:outline-none placeholder:text-outline"
                   />
                   <button
@@ -258,7 +367,7 @@ export default function LoginPage() {
                 <input
                   type="checkbox"
                   checked={trustDevice}
-                  onChange={e => setTrustDevice(e.target.checked)}
+                  onChange={(e) => setTrustDevice(e.target.checked)}
                   className="w-5 h-5 rounded accent-primary cursor-pointer"
                 />
                 <span className="text-body-sm text-on-surface">
@@ -275,23 +384,25 @@ export default function LoginPage() {
                 {isLoading ? (
                   <>
                     <span className="material-symbols-outlined animate-spin text-[20px]">sync</span>
-                    <span>INITIALIZING LOCAL DATABASE...</span>
+                    <span>AUTHENTICATING ROLE CREDENTIALS...</span>
                   </>
                 ) : (
                   <>
                     <span className="material-symbols-outlined text-[20px]">login</span>
-                    <span>SIGN IN TO CLINICAL WORKSTATION</span>
+                    <span>
+                      {activeTab === 'doctor' ? 'SIGN IN AS ATTENDING DOCTOR' : 'SIGN IN AS CLINICAL STAFF'}
+                    </span>
                   </>
                 )}
               </button>
 
-              {/* Biometric Quick Auth */}
+              {/* Switch to PIN */}
               <button
                 onClick={() => setActiveTab('pin')}
-                className="w-full h-[48px] bg-surface-container-low text-primary text-label-lg font-semibold rounded-xl flex items-center justify-center gap-2"
+                className="w-full h-[46px] bg-surface-container-low text-primary text-label-md font-semibold rounded-xl flex items-center justify-center gap-2"
               >
-                <span className="material-symbols-outlined text-[20px]">fingerprint</span>
-                <span>Quick Biometric / 6-Digit PIN Quick Auth</span>
+                <span className="material-symbols-outlined text-[18px]">fingerprint</span>
+                <span>Use 6-Digit Shift PIN</span>
               </button>
             </div>
           </div>
@@ -305,7 +416,7 @@ export default function LoginPage() {
             </div>
             <h2 className="text-headline-sm text-on-surface font-semibold">Enter Shift PIN</h2>
             <p className="text-body-sm text-on-surface-variant max-w-xs">
-              Authorized for registered clinician Dr. E. Jenkins on Station 04
+              Authorized for Station 04 clinicians (Default demo PIN: 123456)
             </p>
 
             {/* PIN Dots */}
@@ -327,7 +438,13 @@ export default function LoginPage() {
                 </button>
               ))}
               <button
-                onClick={() => { dispatch({ type: 'LOGIN_PIN' }); navigate('/patients'); }}
+                onClick={() => {
+                  dispatch({
+                    type: 'LOGIN_PIN',
+                    payload: { doctor_id: 'DOC-001', name: 'Dr. Priya Sharma', role: 'doctor', role_verified: 1 },
+                  });
+                  navigate('/patients');
+                }}
                 className="h-12 rounded-xl bg-surface-container-low flex items-center justify-center text-primary active:bg-surface-container"
               >
                 <span className="material-symbols-outlined text-[24px]">fingerprint</span>
@@ -381,12 +498,15 @@ export default function LoginPage() {
               className="text-label-md text-primary font-semibold hover:underline flex items-center gap-1"
             >
               <span className="material-symbols-outlined text-[16px]">person_add</span>
-              <span>Register New Medical Officer</span>
+              <span>Register New Medical / Staff Account</span>
             </button>
             <span className="text-outline-variant">•</span>
-            <button className="text-label-md text-on-surface-variant hover:underline flex items-center gap-1">
-              <span className="material-symbols-outlined text-[16px]">smart_card_reader</span>
-              <span>Key Reset / SmartCard Issue</span>
+            <button
+              onClick={() => navigate('/settings')}
+              className="text-label-md text-on-surface-variant hover:underline flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-[16px]">settings</span>
+              <span>Station Diagnostic Settings</span>
             </button>
           </div>
           <div className="flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-full">

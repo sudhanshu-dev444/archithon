@@ -4,8 +4,8 @@ import { useSync } from '../../context/SyncContext';
 
 const navItems = [
   { to: '/patients', icon: 'people', label: 'Patients' },
-  { to: '/sync', icon: 'receipt_long', label: 'Records', hasBadge: true },
-  { to: '/reports', icon: 'bar_chart', label: 'Reports' },
+  { to: '/reports', icon: 'clinical_notes', label: 'Records' },
+  { to: '/sync', icon: 'sync', label: 'Sync', hasBadge: true },
   { to: '/settings', icon: 'settings', label: 'Settings' },
 ];
 

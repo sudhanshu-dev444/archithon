@@ -2,13 +2,15 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSync } from '../../context/SyncContext';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 
 const LOGO_URL = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBTCKd8JyE3pMNe-xO7-aHqY4Aa5U3Q8Zktmt4XpsKF4RDzamR0RuX4oHk3Zax-c2o4itGS6gx0-E1nrOj40dE-pMQuK15MSG6CaZvbe_fqFYJf2OezwqgkVI4oYP8b9Myg672GOnuyeChiRYLKTN6LWO1Ww8Ek-inXYgnvjTjd-GPE7_YWmGhKsmdfHnVdR2a59nZyQ1yA_ATqG65Qi8xN_Lxg9yn_IHBp3I-JOphnUwjhM2gXa4k';
 
 export default function AppHeader({ title = 'Swasthya Sync', subtitle, showBack = false, showLock = false, rightContent }) {
   const navigate = useNavigate();
   const { status } = useSync();
-  const { dispatch } = useAuth();
+  const { doctor, isDoctor, logout } = useAuth();
+  const { showToast } = useToast();
 
   const offlinePillText = status === 'syncing' ? 'Syncing...' :
     status === 'synced' ? 'Synced' :
@@ -44,14 +46,26 @@ export default function AppHeader({ title = 'Swasthya Sync', subtitle, showBack 
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {doctor && (
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-[12px] font-semibold text-on-surface">
+              <span className={`w-2 h-2 rounded-full ${isDoctor ? 'bg-primary' : 'bg-secondary'}`}></span>
+              <span className="truncate max-w-[130px]">{doctor.name}</span>
+              <span className="text-[10px] uppercase font-bold text-outline">({doctor.role || 'Staff'})</span>
+            </div>
+          )}
           {rightContent}
           {showLock && (
             <button
-              onClick={() => dispatch({ type: 'LOGOUT' })}
-              className="w-9 h-9 flex items-center justify-center rounded-lg text-secondary hover:text-primary"
+              onClick={() => {
+                logout();
+                showToast?.('Terminal session locked. Shift ended.', 'info');
+                navigate('/login');
+              }}
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-secondary hover:text-primary hover:bg-surface-container transition-colors active:scale-95"
+              title="Sign Out / Lock Session"
               aria-label="Lock Session"
             >
-              <span className="material-symbols-outlined text-[20px]">lock</span>
+              <span className="material-symbols-outlined text-[20px]">logout</span>
             </button>
           )}
         </div>

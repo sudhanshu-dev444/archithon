@@ -1,87 +1,68 @@
-# Swasthya Sync — Backend API
+# Swasthya Sync — Offline-First Multimodal AI Healthcare Assistant (PS04)
 
-Node.js / Express sync engine backend for the Offline-First Multimodal Clinical Assistant (PS04).
+Production-grade React web application built from Google Stitch designs for rural clinical field outposts (Ganiyari Health Outpost).
 
-## Stack
-- **Runtime**: Node.js 18+ (ESM)
-- **Framework**: Express 4
-- **Database**: SQLite via `better-sqlite3` (swap to PostgreSQL for production)
-- **Auth**: SHA-256 token sessions (replace with JWT + RS256 in production)
+Designed for zero-connectivity environments with local SQLite persistence, on-device ambient dictation, edge OCR prescription processing, and conflict-aware differential synchronization.
 
-## Folder structure
+---
 
-```
-backend/
-  server.js              # Entry point, route mounting
-  db/
-    schema.js            # SQLite schema init + getDb()
-    seed.js              # Demo data seed
-  middleware/
-    auth.js              # requireAuth, requireRole, generateToken
-  services/
-    auditService.js      # Hash-chained audit log writer
-    allergyChecker.js    # Drug-allergy cross-reactivity checker
-    syncService.js       # Core sync engine: push/pull/verify/conflict
-  routes/
-    auth.js              # /auth/* + /admin/devices/*
-    patients.js          # /patients/* + encounters + prescriptions
-    sync.js              # /sync/* + /conflicts/* + /audit
-```
+## 🚀 Live Demo & Quick Start
 
-## Quick start
+### Prerequisites
+- Node.js 18+ & npm
+
+### Running Locally
 
 ```bash
-cd backend
+# Navigate to the application directory
+cd Swasthya_sync/swasthya-sync-app
+
+# Install dependencies (already installed if cloning checkout)
 npm install
-node server.js   # runs on http://localhost:4000
+
+# Start Vite development server
+npm run dev
 ```
 
-## Key API endpoints
+Open `http://localhost:5173` in your browser.
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/health` | Liveness check |
-| POST | `/auth/register` | Register doctor |
-| POST | `/auth/login` | Login → token |
-| POST | `/auth/login/pin` | Quick PIN login |
-| POST | `/auth/emergency` | Emergency bypass session |
-| GET | `/auth/me` | Current session info |
-| GET | `/patients` | Patient list (`?q=&triage=critical`) |
-| POST | `/patients` | Create patient |
-| GET | `/patients/:id` | Patient detail + allergies + encounters |
-| POST | `/patients/:id/encounters` | New encounter |
-| PATCH | `/patients/:id/encounters/:enc_id` | Update/approve encounter |
-| POST | `/patients/:id/encounters/:enc_id/allergy-check` | Drug-allergy check |
-| **POST** | **`/sync/push`** | **Push operation batch** |
-| **GET** | **`/sync/pull`** | **Pull new ops since cursor** |
-| GET | `/sync/verify` | Per-patient convergence checksum |
-| GET | `/sync/status` | Pending count, open conflicts |
-| GET | `/sync/conflicts` | List open conflicts |
-| GET | `/sync/conflicts/:id` | Conflict detail + version history |
-| POST | `/sync/conflicts/:id/resolve` | Resolve conflict (keep_a/keep_b/merge) |
-| GET | `/sync/audit` | Paginated audit log |
-| POST | `/admin/devices/:id/revoke` | Revoke a device |
+---
 
-## Demo credentials
+## 📱 Screen Inventory & Routes
 
-| Field | Value |
-|-------|-------|
-| Email | `priya.sharma@ganiyari.in` |
-| Passphrase | `demo1234` |
-| PIN | `123456` |
-| Device ID | `DEVICE-GANIYARI-ALPHA` |
+| # | Screen Name | Route | Key Capabilities |
+|---|---|---|---|
+| **S1** | **Doctor Login & Quick PIN** | `/login` | Doctor ID/Passphrase login, 6-digit Quick PIN numpad with auto-advance, Code Blue Emergency Triage Bypass |
+| **S2** | **Staff Registration** | `/register` | 3-step medical officer registration, council & specialty pickers, biometric keycard binding |
+| **S3** | **Offline Patient Directory & RAG** | `/patients` | Instant offline search across 248 records, Triage Queue (Critical/Urgent/Routine), Active Allergy Guard banner |
+| **S4** | **Patient Medical Record & Timeline** | `/patients/:id` | 2x2 vitals grid with baseline comparison, consultation history timeline, documented adverse drug event callout |
+| **S5** | **Multimodal Clinical Intake** | `/patients/:id/intake` | 16-bar real-time audio waveform animation, Hindi/English live translation stream, Edge OCR slip scanner, Drug conflict guard |
+| **S6** | **Clinical Case Review & Sign-off** | `/patients/:id/review` | AI provenance badges ("Suggested from dictation"), ICD-10 coders, Critical Allergy Conflict reject/adopt card, Doctor verification checkbox |
+| **S7** | **Differential Sync & Conflict Inspector** | `/sync` | Two-way partition collision inspector, side-by-side diff (This Clinic vs District Hospital), 3-way merge resolution, Outbox queue |
 
-## Sync engine overview
+---
 
-The sync engine implements the spec from `Sync_Engine_Mechanics.md`:
+## 🛠️ Architecture & Tech Stack
 
-1. **`POST /sync/push`** — Client sends a batch of operations (each with a `op_id` idempotency key). The server processes each in a transaction: checks `processed_operations` for duplicates, detects version conflicts, applies or stores conflict, then writes to `processed_operations`.
+- **Framework**: React 18 + Vite
+- **Routing**: React Router v6
+- **Styling**: Tailwind CSS v3 with exact tokens from `DESIGN.md`
+  - Primary: `#003441` (Deep Forest Teal)
+  - Secondary: `#3a6472`
+  - Tertiary / Emergency: `#660200` / `#ba1a1a`
+  - Surface: `#f8f9ff`
+- **Typography**: Inter (Google Fonts) with tabular numbers for vitals
+- **Icons**: Google Material Symbols Outlined
+- **State Management**: React Context + useReducer
+  - `AuthContext`: Clinician identity, PIN session, Emergency Bypass auditing
+  - `PatientContext`: Local cache of 248 patient records with instant offline querying
+  - `SyncContext`: Offline outbox, pending queues, differential collision counts
+- **Mock Data**: Rich JSON stores in `src/data/` for patients, encounters, and formulary contraindications
 
-2. **`GET /sync/pull`** — Returns all operations with `server_seq > since` (excluding same device). Client advances its cursor.
+---
 
-3. **Conflict detection** — If `base_version < current server version` AND the same field is changed, a `conflicts` row is created. The operation is NOT applied. The client receives `status: "conflict"`.
+## 🛡️ Critical Clinical Safety Rules
 
-4. **Conflict resolution** — `POST /sync/conflicts/:id/resolve` with strategy `keep_a | keep_b | merge`. Creates a RESOLVE operation through the normal push path.
-
-5. **Audit chain** — Every action writes a hash-chained `audit_log` entry. The chain is verifiable.
-
+1. **Deterministic Allergy Checking**: The drug-allergy conflict engine evaluates against local patient history (e.g. Sunita Devi PAT-8812's severe Penicillin anaphylaxis). It warns immediately when Amoxicillin or beta-lactams are detected from OCR or dictation, suggesting safe formulary alternatives (Azithromycin 500mg).
+2. **Explicit Clinician Sign-off**: No AI draft can be automatically committed into the clinical record without the clinician checking the Doctor Verification box and clicking "Save & Approve Record".
+3. **Traceability**: All synthesized sections display provenance tags indicating their origin (e.g., `Suggested from dictation`, `Confidence: 96%`).

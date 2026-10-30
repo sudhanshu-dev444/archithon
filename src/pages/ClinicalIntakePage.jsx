@@ -6,6 +6,7 @@ import AllergyBanner from '../components/layout/AllergyBanner';
 import BottomNav from '../components/layout/BottomNav';
 import VoiceRecorder from '../components/intake/VoiceRecorder';
 import DrugConflictCard from '../components/review/DrugConflictCard';
+import CameraCapture from '../components/ui/CameraCapture';
 
 export default function ClinicalIntakePage() {
   const { id } = useParams();
@@ -37,6 +38,7 @@ export default function ClinicalIntakePage() {
   const [ocrAlternativeAdopted, setOcrAlternativeAdopted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedImage, setUploadedImage] = useState(null);
+  const [showCamera, setShowCamera] = useState(false);
 
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
@@ -52,11 +54,13 @@ export default function ClinicalIntakePage() {
 
   const handleSynthesize = () => {
     setIsProcessing(true);
+    try {
+      localStorage.setItem(`swasthya_draft_observations_${patient.id}`, manualNotes);
+    } catch {}
     setTimeout(() => {
       setIsProcessing(false);
-      setDraftReady(true);
-      navigate(`/patients/${patient.id}/review`);
-    }, 1000);
+      navigate(`/patients/${patient.id}/review`, { state: { notes: manualNotes } });
+    }, 700);
   };
 
   return (
@@ -136,7 +140,19 @@ export default function ClinicalIntakePage() {
             </span>
           </div>
 
-          <VoiceRecorder onDraftReady={() => setDraftReady(true)} />
+          <VoiceRecorder
+            patientId={patient.id}
+            encounterId={`ENC-${Date.now()}`}
+            onDraftReady={(speechTranscript) => {
+              if (speechTranscript) {
+                setManualNotes((prev) =>
+                  prev
+                    ? `${prev}\n\n[Synthesized Voice Observation]: ${speechTranscript}`
+                    : speechTranscript
+                );
+              }
+            }}
+          />
         </section>
 
         {/* Section 2: Prescription / Lab Slip OCR Scanner */}
@@ -162,7 +178,7 @@ export default function ClinicalIntakePage() {
                   </div>
                   <div className="flex flex-col">
                     <span className="text-label-md font-bold text-on-surface">Scanned Paper Prescription Slip</span>
-                    <span className="text-[12px] text-outline">District Referral Sub-Center â€¢ Scanned 2m ago</span>
+                    <span className="text-[12px] text-outline">District Referral Sub-Center • Scanned 2m ago</span>
                   </div>
                 </div>
                 <button
@@ -197,7 +213,7 @@ export default function ClinicalIntakePage() {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setOcrDetected(true)}
+              onClick={() => setShowCamera(true)}
               className="flex-1 min-h-[48px] rounded-xl bg-surface-container-high text-primary font-bold text-label-md flex items-center justify-center gap-2 hover:bg-surface-variant transition-colors"
             >
               <span className="material-symbols-outlined text-[20px]">photo_camera</span>
@@ -252,7 +268,7 @@ export default function ClinicalIntakePage() {
             ) : (
               <>
                 <span className="material-symbols-outlined text-[22px]">rate_review</span>
-                <span>Proceed to Clinician Review & Verification</span>
+                <span>Proceed to Clinician Review &amp; Verification</span>
               </>
             )}
           </button>
@@ -263,6 +279,21 @@ export default function ClinicalIntakePage() {
           </div>
         </div>
       </main>
+
+      {/* Camera Capture Modal for Document Scanner */}
+      {showCamera && (
+        <CameraCapture
+          title="Scan Prescription / Document"
+          mode="document"
+          initialFacingMode="environment"
+          onCapture={(dataUrl) => {
+            setUploadedImage(dataUrl);
+            setOcrDetected(true);
+            setShowCamera(false);
+          }}
+          onClose={() => setShowCamera(false)}
+        />
+      )}
 
       {/* Fixed Bottom Navigation */}
       <BottomNav />
