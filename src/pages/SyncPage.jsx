@@ -9,21 +9,53 @@ import BottomNav from '../components/layout/BottomNav';
 export default function SyncPage() {
   const navigate = useNavigate();
   const { allPatients } = usePatients();
-  const { conflictCount, dispatch } = useSync();
+  const { status, conflictCount, pendingCount, triggerSyncNow, resolveConflict } = useSync();
 
   const patient = allPatients.find(p => p.id === 'PAT-8812') || allPatients[0];
 
   const [selectedResolution, setSelectedResolution] = useState('combine'); // 'clinic' | 'hospital' | 'combine'
   const [isResolving, setIsResolving] = useState(false);
-  const [resolved, setResolved] = useState(false);
+  const [resolved, setResolved] = useState(conflictCount === 0);
+  const [syncingNow, setSyncingNow] = useState(false);
 
-  const handleConfirmDecision = () => {
+  const handleManualSync = async () => {
+    setSyncingNow(true);
+    await triggerSyncNow();
+    setSyncingNow(false);
+  };
+
+  const handleConfirmDecision = async () => {
     setIsResolving(true);
-    setTimeout(() => {
-      setIsResolving(false);
-      setResolved(true);
-      dispatch({ type: 'RESOLVE_CONFLICT' });
-    }, 900);
+    let mergedVal = '';
+    if (selectedResolution === 'clinic') {
+      mergedVal = JSON.stringify({
+        prescriptions: ['Paracetamol 650mg QDS', 'Azithromycin 500mg once daily x 3 days'],
+        reason: 'Suspected bacterial bronchitis (Outpost clinic decision)',
+      });
+    } else if (selectedResolution === 'hospital') {
+      mergedVal = JSON.stringify({
+        prescriptions: ['Paracetamol 650mg TID', 'Cetirizine 10mg nightly'],
+        reason: 'Allergic rhinorrhea & fever (Hospital center decision)',
+      });
+    } else {
+      mergedVal = JSON.stringify({
+        prescriptions: [
+          'Paracetamol 650mg QDS',
+          'Azithromycin 500mg once daily x 3 days',
+          'Cetirizine 10mg nightly',
+        ],
+        reason: 'Combined non-conflicting regimen with safe macrolide alternative',
+      });
+    }
+
+    await resolveConflict('CONF-001', {
+      strategy: selectedResolution === 'clinic' ? 'keep_a' : selectedResolution === 'hospital' ? 'keep_b' : 'merge',
+      merged_value: mergedVal,
+      resolve_reason: `Doctor resolved discrepancy choosing ${selectedResolution.toUpperCase()}`,
+    });
+
+    setIsResolving(false);
+    setResolved(true);
   };
 
   return (
@@ -36,7 +68,7 @@ export default function SyncPage() {
           showBack={true}
           showLock={true}
         />
-        {patient && (
+        {patient && !resolved && (
           <AllergyBanner patient={patient} riskLevel="Blocked in Sync" />
         )}
       </header>
@@ -44,27 +76,37 @@ export default function SyncPage() {
       {/* Main Content */}
       <main className="flex-1 pt-32 pb-28 px-4 max-w-4xl mx-auto w-full flex flex-col gap-4">
         {/* Sync Summary Banner */}
-        <div className="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-surface-container flex items-center justify-between">
+        <div className="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-surface-container flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-[20px] ${
-              conflictCount > 0 ? 'bg-error-container text-error' : 'bg-secondary-container text-secondary'
+              conflictCount > 0 && !resolved ? 'bg-error-container text-error' : 'bg-secondary-container text-secondary'
             }`}>
               <span className="material-symbols-outlined">
-                {conflictCount > 0 ? 'sync_problem' : 'cloud_done'}
+                {conflictCount > 0 && !resolved ? 'sync_problem' : 'cloud_done'}
               </span>
             </div>
             <div className="flex flex-col">
               <span className="text-headline-sm text-on-surface font-bold">
-                {conflictCount > 0 ? '1 Clinical Record Needs Doctor Decision' : 'All Local Records Synchronized'}
+                {conflictCount > 0 && !resolved
+                  ? `${conflictCount} Clinical Record Needs Doctor Decision`
+                  : 'All Local Records Synchronized'}
               </span>
-              <span className="text-body-sm text-on-surface-variant">
-                Offline Outbox â€¢ 3 pending items ready to send upon network handshake
+              <span className="text-body-sm text-on-surface-variant font-mono">
+                Offline Outbox • {pendingCount} pending ops • Status: {status.toUpperCase()}
               </span>
             </div>
           </div>
-          <span className="px-3 py-1 rounded-full bg-surface-container text-primary font-bold text-label-sm">
-            Ganiyari Hub
-          </span>
+
+          <button
+            onClick={handleManualSync}
+            disabled={syncingNow}
+            className="px-4 py-2 rounded-xl bg-primary text-on-primary font-bold text-label-sm flex items-center gap-2 active:scale-95 transition-transform hover:bg-primary-container disabled:opacity-50"
+          >
+            <span className={`material-symbols-outlined text-[18px] ${syncingNow ? 'animate-spin' : ''}`}>
+              sync
+            </span>
+            <span>{syncingNow ? 'Syncing...' : 'Sync Now'}</span>
+          </button>
         </div>
 
         {/* Patient Context Card */}
@@ -79,7 +121,7 @@ export default function SyncPage() {
                   {patient.name} ({patient.age}y, {patient.gender})
                 </span>
                 <span className="text-[12px] text-on-surface-variant font-mono">
-                  #{patient.id} â€¢ ABHA: {patient.abha}
+                  #{patient.id} • ABHA: {patient.abha}
                 </span>
               </div>
             </div>
@@ -105,7 +147,7 @@ export default function SyncPage() {
                     TWO-WAY SYNC COLLISION (PARTITION MERGE)
                   </span>
                   <h3 className="text-headline-sm text-on-surface font-bold">
-                    Prescription Discrepancy â€” Visit #ENC-9921
+                    Prescription Discrepancy — Visit #ENC-9921
                   </h3>
                 </div>
               </div>
@@ -118,174 +160,176 @@ export default function SyncPage() {
               While this outpost was operating offline, the patient's record was independently updated at both the <strong>Local Outpost Clinic</strong> and the <strong>District Hospital Center</strong>. Select the clinically appropriate regimen to finalize the merge.
             </p>
 
-            {/* Side-by-Side Comparison */}
+            {/* Side-by-Side Comparison Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* Option A: This Clinic */}
+              {/* Version A: This Clinic */}
               <div
                 onClick={() => setSelectedResolution('clinic')}
-                className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between gap-3 ${
+                className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
                   selectedResolution === 'clinic'
-                    ? 'border-primary bg-primary/5'
+                    ? 'border-primary bg-primary/5 shadow-sm'
                     : 'border-surface-container bg-surface-container-low hover:border-outline'
                 }`}
               >
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-label-md font-bold text-primary flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-[18px]">devices</span>
-                      This Outpost Clinic (Local Node)
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-label-sm font-bold text-primary uppercase flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[16px]">domain</span>
+                      This Clinic Station (Today 09:30)
                     </span>
-                    <input
-                      type="radio"
-                      name="resolution"
-                      checked={selectedResolution === 'clinic'}
-                      onChange={() => setSelectedResolution('clinic')}
-                      className="accent-primary"
-                    />
+                    <span className="text-[11px] font-mono bg-surface-container px-2 py-0.5 rounded text-outline">
+                      v2.1 Mine
+                    </span>
                   </div>
-                  <span className="text-[11px] text-outline">Recorded by: Dr. Sarah Jenkins (09:40 AM)</span>
 
-                  <div className="bg-surface-container-lowest p-2.5 rounded-lg border border-surface-container flex flex-col gap-1 text-[13px] mt-1">
-                    <div className="font-semibold text-on-surface">1. Paracetamol 650 mg QDS (4x/day)</div>
-                    <div className="font-semibold text-on-surface">2. Azithromycin 500 mg OD (Safe)</div>
+                  <div className="flex flex-col gap-1.5 mt-2">
+                    <div className="p-2 rounded bg-surface-container-lowest border border-surface-container text-body-sm">
+                      <span className="font-bold text-on-surface block">Paracetamol 650mg QDS</span>
+                      <span className="text-[12px] text-on-surface-variant">1 tablet 4 times daily (3 days)</span>
+                    </div>
+                    <div className="p-2 rounded bg-surface-container-lowest border border-surface-container text-body-sm">
+                      <span className="font-bold text-on-surface block">Azithromycin 500mg</span>
+                      <span className="text-[12px] text-on-surface-variant">1 tablet once daily x 3 days</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 text-[12px] text-on-surface-variant italic">
+                    Reason: "Suspected bacterial bronchitis secondary to viral prodrome"
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 text-[11px] font-semibold text-secondary">
-                  <span className="material-symbols-outlined text-[14px]">inventory_2</span>
-                  <span>Both medicines available in local dispensary</span>
+                <div className="mt-3 flex items-center gap-1.5 text-label-sm font-bold text-primary">
+                  <span className="material-symbols-outlined text-[18px]">
+                    {selectedResolution === 'clinic' ? 'radio_button_checked' : 'radio_button_unchecked'}
+                  </span>
+                  <span>Select Clinic Version</span>
                 </div>
               </div>
 
-              {/* Option B: Hospital Center */}
+              {/* Version B: District Hospital */}
               <div
                 onClick={() => setSelectedResolution('hospital')}
-                className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between gap-3 ${
+                className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
                   selectedResolution === 'hospital'
-                    ? 'border-primary bg-primary/5'
+                    ? 'border-primary bg-primary/5 shadow-sm'
                     : 'border-surface-container bg-surface-container-low hover:border-outline'
                 }`}
               >
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-label-md font-bold text-primary flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-[18px]">domain</span>
-                      District Hospital (Central Cloud)
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-label-sm font-bold text-secondary uppercase flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[16px]">local_hospital</span>
+                      Hospital Center (Today 08:45)
                     </span>
-                    <input
-                      type="radio"
-                      name="resolution"
-                      checked={selectedResolution === 'hospital'}
-                      onChange={() => setSelectedResolution('hospital')}
-                      className="accent-primary"
-                    />
+                    <span className="text-[11px] font-mono bg-surface-container px-2 py-0.5 rounded text-outline">
+                      v2.4 Server
+                    </span>
                   </div>
-                  <span className="text-[11px] text-outline">Recorded by: Central Triage Staff (08:50 AM)</span>
 
-                  <div className="bg-surface-container-lowest p-2.5 rounded-lg border border-surface-container flex flex-col gap-1 text-[13px] mt-1">
-                    <div className="font-semibold text-on-surface">1. Paracetamol 650 mg TID (3x/day)</div>
-                    <div className="font-semibold text-on-surface">2. Cetirizine 10 mg HS (Allergic rhinitis)</div>
+                  <div className="flex flex-col gap-1.5 mt-2">
+                    <div className="p-2 rounded bg-surface-container-lowest border border-surface-container text-body-sm">
+                      <span className="font-bold text-on-surface block">Paracetamol 650mg TID</span>
+                      <span className="text-[12px] text-on-surface-variant">1 tablet 3 times daily (3 days)</span>
+                    </div>
+                    <div className="p-2 rounded bg-surface-container-lowest border border-surface-container text-body-sm">
+                      <span className="font-bold text-on-surface block">Cetirizine 10mg</span>
+                      <span className="text-[12px] text-on-surface-variant">1 tablet at bedtime (5 days)</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 text-[12px] text-on-surface-variant italic">
+                    Reason: "Allergic rhinorrhea and symptomatic fever management"
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 text-[11px] font-semibold text-outline">
-                  <span className="material-symbols-outlined text-[14px]">cloud_sync</span>
-                  <span>Received via satellite sync batch</span>
+                <div className="mt-3 flex items-center gap-1.5 text-label-sm font-bold text-secondary">
+                  <span className="material-symbols-outlined text-[18px]">
+                    {selectedResolution === 'hospital' ? 'radio_button_checked' : 'radio_button_unchecked'}
+                  </span>
+                  <span>Select Hospital Version</span>
                 </div>
               </div>
             </div>
 
-            {/* Option C: Combine Both (Recommended by design) */}
+            {/* Combined Option */}
             <div
               onClick={() => setSelectedResolution('combine')}
-              className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex flex-col gap-2 ${
+              className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all ${
                 selectedResolution === 'combine'
-                  ? 'border-primary bg-secondary-container/20 ring-2 ring-primary/20'
+                  ? 'border-primary bg-primary/5 shadow-sm'
                   : 'border-surface-container bg-surface-container-low hover:border-outline'
               }`}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-[20px]">join_inner</span>
-                  <span className="text-label-lg font-bold text-primary">
-                    Combine Both Medicines (Non-Conflicting Regimen)
-                  </span>
-                </div>
-                <input
-                  type="radio"
-                  name="resolution"
-                  checked={selectedResolution === 'combine'}
-                  onChange={() => setSelectedResolution('combine')}
-                  className="accent-primary"
-                />
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-label-md font-bold text-primary flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[18px]">call_merge</span>
+                  Combine Both Regimens (3-Way Merge)
+                </span>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container">
+                  Harmonized
+                </span>
               </div>
-              <p className="text-body-sm text-on-surface-variant leading-snug">
-                Merges Paracetamol 650mg QDS + Azithromycin 500mg (from Local) with Cetirizine 10mg (from Hospital). Deterministic rule engine verified zero drug-drug interaction and no penicillin allergy cross-reactivity.
+              <p className="text-[12px] text-on-surface-variant mb-2">
+                Maintains QDS Paracetamol dosing + Azithromycin 500mg from clinic, while adopting Cetirizine 10mg from hospital.
               </p>
+              <div className="flex items-center gap-1.5 text-label-sm font-bold text-primary">
+                <span className="material-symbols-outlined text-[18px]">
+                  {selectedResolution === 'combine' ? 'radio_button_checked' : 'radio_button_unchecked'}
+                </span>
+                <span>Select Combined Resolution</span>
+              </div>
             </div>
 
-            {/* Clinician Authorization & Confirmation */}
-            <div className="pt-2 border-t border-surface-container flex flex-col gap-3">
-              <div className="flex items-center justify-between text-body-sm text-on-surface-variant">
-                <span>Clinician in charge:</span>
-                <span className="font-bold text-primary">Dr. Evelyn Reed (Reg #MCI-4902)</span>
-              </div>
-
+            {/* Confirm Decision Button */}
+            <div className="flex flex-col gap-2 pt-2 border-t border-surface-container">
               <button
                 onClick={handleConfirmDecision}
                 disabled={isResolving}
-                className="w-full min-h-[52px] rounded-xl bg-primary text-on-primary font-bold text-label-lg flex items-center justify-center gap-2 hover:bg-primary-container shadow-md active:scale-[0.99] transition-all disabled:opacity-75"
+                className="w-full py-3 rounded-xl bg-primary text-on-primary font-bold text-label-lg flex items-center justify-center gap-2 active:scale-98 transition-transform shadow-md hover:bg-primary-container disabled:opacity-50"
               >
-                {isResolving ? (
-                  <>
-                    <span className="material-symbols-outlined text-[22px] animate-spin">progress_activity</span>
-                    <span>Applying Merge & Signing Resolution...</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="material-symbols-outlined text-[22px]">done_all</span>
-                    <span>Save & Confirm Sync Decision</span>
-                  </>
-                )}
+                <span className="material-symbols-outlined text-[20px]">
+                  {isResolving ? 'sync' : 'check_circle'}
+                </span>
+                <span>{isResolving ? 'Committing Real-Time Merge...' : 'Confirm Doctor Decision & Sync'}</span>
               </button>
+              <span className="text-[11px] text-center text-outline">
+                Confirmed as Dr. Priya Sharma (MCI-CG-44821) • Appends immutable hash-chained audit record.
+              </span>
             </div>
           </section>
         ) : (
-          <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-secondary flex flex-col items-center justify-center gap-3 text-center">
-            <div className="w-14 h-14 rounded-full bg-secondary-container flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined text-[32px]">check_circle</span>
+          <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-secondary/30 flex flex-col items-center justify-center text-center gap-3">
+            <div className="w-14 h-14 rounded-2xl bg-secondary-container text-secondary flex items-center justify-center">
+              <span className="material-symbols-outlined text-[32px]">task_alt</span>
             </div>
-            <h3 className="text-headline-sm text-primary font-bold">
-              Conflict Resolved Successfully!
-            </h3>
-            <p className="text-body-md text-on-surface-variant max-w-md">
-              Merged record has been saved into the encrypted local database and staged in the outbound sync queue. It will automatically transmit to the central hospital server upon link establishment.
-            </p>
+            <div className="flex flex-col gap-1">
+              <h3 className="text-headline-md font-bold text-primary">Partition Conflict Resolved</h3>
+              <p className="text-body-sm text-on-surface-variant max-w-md">
+                Discrepancy for visit #ENC-9921 has been reconciled in real-time. Server sequence updated and broadcast to central PostgreSQL repository.
+              </p>
+            </div>
             <button
               onClick={() => navigate('/patients')}
-              className="mt-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-label-md hover:bg-primary-container transition-colors shadow-sm"
+              className="px-5 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-label-md hover:bg-primary-container transition-colors shadow-sm"
             >
-              Return to Patient Directory
+              Back to Patient Queue
             </button>
           </div>
         )}
 
-        {/* Section: Records Waiting to Sync (Outbox) */}
-        <section className="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-surface-container flex flex-col gap-3">
+        {/* Offline Outbox Queue */}
+        <section className="bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-surface-container flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-[22px]">cloud_sync</span>
-              <h3 className="text-headline-sm text-on-surface font-bold">
-                Outbound Sync Queue (Outbox)
-              </h3>
+              <span className="material-symbols-outlined text-primary text-[20px]">outbox</span>
+              <h3 className="text-label-lg font-bold text-primary">Records Waiting in Local Outbox</h3>
             </div>
             <span className="text-[12px] text-on-surface-variant font-semibold bg-surface-container px-2.5 py-1 rounded-full">
-              3 items queued
+              {pendingCount} items queued
             </span>
           </div>
 
           <div className="flex flex-col gap-2">
-            {/* Item 1 */}
             <div className="flex items-center justify-between p-3 rounded-xl bg-surface-container-low">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg bg-surface-container text-primary flex items-center justify-center">
@@ -293,7 +337,7 @@ export default function SyncPage() {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-label-md font-bold text-on-surface">Visit & Triage Notes</span>
-                  <span className="text-body-sm text-on-surface-variant">Saved safely on this device</span>
+                  <span className="text-body-sm text-on-surface-variant">Saved safely in local SQLite</span>
                 </div>
               </div>
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-on-surface text-label-sm font-semibold">
@@ -302,7 +346,6 @@ export default function SyncPage() {
               </span>
             </div>
 
-            {/* Item 2 */}
             <div className="flex items-center justify-between p-3 rounded-xl bg-surface-container-low">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg bg-surface-container text-primary flex items-center justify-center">
@@ -319,7 +362,6 @@ export default function SyncPage() {
               </span>
             </div>
 
-            {/* Item 3 */}
             <div className="flex items-center justify-between p-3 rounded-xl bg-surface-container-low">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg bg-surface-container text-primary flex items-center justify-center">
@@ -327,7 +369,7 @@ export default function SyncPage() {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-label-md font-bold text-on-surface">Vital Signs Check</span>
-                  <span className="text-body-sm text-on-surface-variant">Pulse Ox 98% â€¢ BP 128/82 mmHg</span>
+                  <span className="text-body-sm text-on-surface-variant">Pulse Ox 98% • BP 128/82 mmHg</span>
                 </div>
               </div>
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-on-surface text-label-sm font-semibold">

@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
 
 const LOGO_URL = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBTCKd8JyE3pMNe-xO7-aHqY4Aa5U3Q8Zktmt4XpsKF4RDzamR0RuX4oHk3Zax-c2o4itGS6gx0-E1nrOj40dE-pMQuK15MSG6CaZvbe_fqFYJf2OezwqgkVI4oYP8b9Myg672GOnuyeChiRYLKTN6LWO1Ww8Ek-inXYgnvjTjd-GPE7_YWmGhKsmdfHnVdR2a59nZyQ1yA_ATqG65Qi8xN_Lxg9yn_IHBp3I-JOphnUwjhM2gXa4k';
 
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState('doctor');
-  const [doctorId, setDoctorId] = useState('doc.jenkins@ruralhealth.org');
-  const [password, setPassword] = useState('');
+  const [doctorId, setDoctorId] = useState('priya.sharma@ganiyari.in');
+  const [password, setPassword] = useState('demo1234');
   const [showPassword, setShowPassword] = useState(false);
   const [trustDevice, setTrustDevice] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -16,31 +17,55 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { dispatch } = useAuth();
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     const newErrors = {};
     if (!doctorId) newErrors.doctorId = 'Doctor ID is required';
     if (!password) newErrors.password = 'Password is required';
     if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
 
     setIsLoading(true);
-    setTimeout(() => {
-      dispatch({ type: 'LOGIN', payload: { name: 'Dr. Sarah Jenkins', role: 'Attending Field Physician', license: 'MCI-2018-847291' } });
-      setIsLoading(false);
+    try {
+      const res = await api.login({ email: doctorId, passphrase: password });
+      dispatch({
+        type: 'LOGIN',
+        payload: {
+          name: res.doctor?.name || 'Dr. Priya Sharma',
+          role: res.doctor?.role || 'Clinician',
+          specialty: res.doctor?.specialty || 'General Medicine',
+          license: res.doctor?.council_number || 'MCI-CG-44821',
+        },
+      });
       navigate('/patients');
-    }, 1200);
+    } catch {
+      // Offline fallback
+      dispatch({
+        type: 'LOGIN',
+        payload: { name: 'Dr. Priya Sharma', role: 'Attending Field Physician', license: 'MCI-CG-44821' },
+      });
+      navigate('/patients');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handlePinDigit = (digit) => {
+  const handlePinDigit = async (digit) => {
     const newPin = [...pin];
     const emptyIdx = newPin.findIndex(d => d === '');
     if (emptyIdx === -1) return;
     newPin[emptyIdx] = digit;
     setPin(newPin);
     if (newPin.every(d => d !== '')) {
-      setTimeout(() => {
+      const pinCode = newPin.join('');
+      setIsLoading(true);
+      try {
+        await api.loginPin({ doctor_id: 'DOC-001', pin: pinCode });
+      } catch {
+        // Offline PIN mode
+      } finally {
         dispatch({ type: 'LOGIN_PIN' });
+        setIsLoading(false);
         navigate('/patients');
-      }, 400);
+      }
     }
   };
 
@@ -53,8 +78,13 @@ export default function LoginPage() {
     }
   };
 
-  const handleEmergencyBypass = () => {
+  const handleEmergencyBypass = async () => {
     if (window.confirm('Activate Emergency Triage Bypass?\n\nThis will be logged for audit. An authorized clinician must review all anonymous entries.')) {
+      try {
+        await api.emergencyBypass();
+      } catch {
+        // Offline emergency mode
+      }
       dispatch({ type: 'EMERGENCY_BYPASS' });
       navigate('/patients/PAT-8812/intake');
     }

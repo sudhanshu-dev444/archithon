@@ -36,7 +36,19 @@ export default function ClinicalIntakePage() {
   const [ocrDetected, setOcrDetected] = useState(true);
   const [ocrAlternativeAdopted, setOcrAlternativeAdopted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [draftReady, setDraftReady] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState(null);
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setUploadedImage(event.target.result);
+        setOcrDetected(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSynthesize = () => {
     setIsProcessing(true);
@@ -161,6 +173,12 @@ export default function ClinicalIntakePage() {
                 </button>
               </div>
 
+              {uploadedImage && (
+                <div className="rounded-lg overflow-hidden border border-surface-container max-h-48 flex justify-center bg-black/5">
+                  <img src={uploadedImage} alt="Prescription Scan" className="object-contain max-h-48 w-full" />
+                </div>
+              )}
+
               {/* Detected Text Preview */}
               <div className="bg-surface-container-lowest p-2.5 rounded-lg border border-outline-variant/40 text-[13px] font-mono text-on-surface">
                 <span className="text-[10px] text-secondary font-bold uppercase block mb-1">OCR Extracted Text:</span>
@@ -183,15 +201,18 @@ export default function ClinicalIntakePage() {
               className="flex-1 min-h-[48px] rounded-xl bg-surface-container-high text-primary font-bold text-label-md flex items-center justify-center gap-2 hover:bg-surface-variant transition-colors"
             >
               <span className="material-symbols-outlined text-[20px]">photo_camera</span>
-              <span>Take Photo of Prescription Slip</span>
+              <span>Capture Prescription Slip</span>
             </button>
-            <button
-              onClick={() => setOcrDetected(true)}
-              className="min-h-[48px] px-4 rounded-xl bg-surface-container text-on-surface font-semibold text-label-md flex items-center justify-center gap-1.5 hover:bg-surface-variant transition-colors"
-            >
+            <label className="min-h-[48px] px-4 rounded-xl bg-surface-container text-on-surface font-semibold text-label-md flex items-center justify-center gap-1.5 hover:bg-surface-variant transition-colors cursor-pointer">
               <span className="material-symbols-outlined text-[20px]">upload_file</span>
               <span>Upload Image</span>
-            </button>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+            </label>
           </div>
         </section>
 
